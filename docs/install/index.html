@@ -79,7 +79,7 @@ bash /tmp/aisync-install.sh --dry-run</pre>
 <p>Read the output to the user. After they agree:</p>
 <pre>bash /tmp/aisync-install.sh
 aisync --version</pre>
-<p>If <code>aisync</code> is not on PATH, do <strong>not</strong> edit shell config on your own. Tell the user which command fixes it (<code>uv tool update-shell</code>, <code>pipx ensurepath</code>) and ask. Until then <code>python3 -m ai_sync</code> is equivalent.</p>
+<p>If <code>aisync</code> is not on PATH, do <strong>not</strong> edit shell config on your own. Tell the user which command fixes it (<code>uv tool update-shell</code>, <code>pipx ensurepath</code>) and ask. Until then, run it by the full path the script printed (for example <code>~/.local/bin/aisync</code>).</p>
 
 <h3>4. First run</h3>
 <p>Show the user what a hub looks like. This writes only to a new temp dir:</p>
