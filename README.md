@@ -63,19 +63,19 @@ aisync also does the rules part: one rules block copied into every tool's own ru
 ## Use it
 
 ```bash
-aisync demo                                   # a throwaway hub with a synthetic two-week journal
-aisync init                                   # create ~/.ai-sync (override with AISYNC_HOME)
-aisync install-hooks                          # shows a diff of every tool config it would change, then asks
-aisync watch &                                # event-driven sync loop (or run `aisync sync` by hand)
+aisync demo            # a throwaway hub with a synthetic two-week journal
+aisync init            # create ~/.ai-sync (or wherever AISYNC_HOME points)
+aisync install-hooks   # shows every tool config change as a diff, then asks
+aisync watch &         # event-driven sync loop (or run `aisync sync` by hand)
 ```
 
 What an agent does during a session:
 
 ```bash
-aisync claim  -a codex -p checkout-api -f app/payments/ -m "SDK upgrade"   # exit 3 = someone holds it
-aisync log    -a codex -p checkout-api -k dev_log -m "SDK 5.0, retries kept" -f app/payments/provider.py
-aisync rule add -a codex "every API change ships with a contract test" --reason "two schema breaks"
-aisync release -a codex -p checkout-api
+aisync claim   -a codex -p api -f app/payments/ -m "SDK upgrade"  # 3 = taken
+aisync log     -a codex -p api -m "SDK 5.0, retries kept"
+aisync rule add -a codex "every API change ships a contract test"
+aisync release -a codex -p api
 ```
 
 | Command | What it does |
@@ -150,7 +150,7 @@ aisync is an independent project, not affiliated with the projects above.
 ## Development
 
 ```bash
-python3 -m unittest discover -s tests     # includes build wheel -> fresh venv -> aisync demo + verify
+python3 -m unittest discover -s tests   # also: wheel -> fresh venv -> demo + verify
 ```
 
 The images are generated: the terminal GIF is a recorded real run of

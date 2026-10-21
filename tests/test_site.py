@@ -50,6 +50,13 @@ class ReadmeTests(unittest.TestCase):
         index = (ROOT / "docs/index.html").read_text()
         self.assertFalse(re.findall(r'src="[^"]*\.zh\.[^"]*"', index))
 
+    def test_code_lines_fit_the_github_readme_width(self):
+        wide = lambda line: sum(2 if "\u3000" <= c <= "\u9fff" or "\uff00" <= c <= "\uffef" else 1 for c in line)
+        for name, text in (("README.md", README), ("README.zh-CN.md", README_ZH)):
+            for block in re.findall(r"```(?:bash|text)\n(.*?)```", text, re.S):
+                for line in block.splitlines():
+                    self.assertLessEqual(wide(line), 80, f"{name}: {line}")
+
     def test_no_endorsement_claims(self):
         banned = re.compile(r"\b(endorsed|endorsement|official|officially|approved by|partner(ed|ship)?|sponsored|"
                             r"backed by|certified)\b", re.I)
