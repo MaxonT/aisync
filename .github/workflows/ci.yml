@@ -23,3 +23,39 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Tests
         run: python -m unittest discover -s tests -v
+
+  install-script:
+    # docs/install.sh in clean containers: the git gate first, then a real install of this commit's wheel
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["python:3.12-slim", "debian:bookworm"]
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python without git (debian ships none)
+        run: |
+          apt-get update -qq
+          command -v python3 || apt-get install -y -qq python3 python3-venv
+      - name: install.sh refuses to start without git
+        run: |
+          if bash docs/install.sh --dry-run > out.txt 2>&1; then cat out.txt; exit 1; fi
+          grep -q "git not found" out.txt
+      - name: Build this commit's wheel
+        run: |
+          apt-get install -y -qq git
+          python3 -m venv /tmp/build
+          /tmp/build/bin/pip wheel -q --no-deps -w dist .
+      - name: Dry run changes nothing, then install
+        run: |
+          bash docs/install.sh --dry-run --from dist/aisync-*.whl | tee dry.txt
+          grep -q "dry-run finished" dry.txt
+          test ! -e "$HOME/.local/bin/aisync"
+          bash docs/install.sh --from dist/aisync-*.whl
+      - name: The installed command works
+        run: |
+          export PATH="$HOME/.local/bin:$PATH" AISYNC_NO_NOTIFY=1
+          aisync --version
+          aisync demo --dir /tmp/demo
+          AISYNC_HOME=/tmp/demo aisync verify

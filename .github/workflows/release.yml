@@ -67,3 +67,22 @@ jobs:
           docker run --rm "$image:${TAG#v}" --version
           docker push "$image:${TAG#v}"
           docker push "$image:latest"
+
+  install-check:
+    # the public one-liner in a clean container, against the Release that was just published
+    needs: release
+    runs-on: ubuntu-latest
+    container: python:3.12-slim
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - name: curl install.sh | bash
+        run: |
+          apt-get update -qq && apt-get install -y -qq curl git
+          curl -fsSL https://maxont.github.io/aisync/install.sh | bash
+      - name: The installed command is this release
+        run: |
+          export PATH="$HOME/.local/bin:$PATH" AISYNC_NO_NOTIFY=1
+          test "$(aisync --version)" = "aisync ${TAG#v}"
+          aisync demo --dir /tmp/demo
+          AISYNC_HOME=/tmp/demo aisync verify
