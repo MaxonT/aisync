@@ -401,12 +401,16 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=cmd_log)
 
     s = sub.add_parser("rule", help="shared rules: `rule add \"...\"` (any agent, applies to all) or `rule list`")
-    s.add_argument("action", choices=("add", "list"))
-    s.add_argument("text", nargs="*")
-    s.add_argument("--agent", "-a")
-    s.add_argument("--project", "-p")
-    s.add_argument("--reason", "-r")
-    s.set_defaults(fn=cmd_rule)
+    # real subcommands, so the rule text may come after the flags on Python 3.11 too
+    rsub = s.add_subparsers(dest="action", required=True)
+    r = rsub.add_parser("add", help="add a shared rule every tool follows")
+    r.add_argument("text", nargs="*")
+    r.add_argument("--agent", "-a")
+    r.add_argument("--project", "-p")
+    r.add_argument("--reason", "-r")
+    r.set_defaults(fn=cmd_rule)
+    r = rsub.add_parser("list", help="print the shared rules")
+    r.set_defaults(fn=cmd_rule)
 
     s = sub.add_parser("claim", help="say you are working on files of a repo now (exit 3 = overlap)")
     s.add_argument("--summary", "-m", required=True)
