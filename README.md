@@ -150,7 +150,7 @@ aisync is an independent project, not affiliated with the projects above.
 ## Development
 
 ```bash
-python3 -m unittest discover -s tests   # also: wheel -> fresh venv -> demo + verify
+python3 -m unittest discover -s tests   # includes wheel -> venv -> demo
 ```
 
 The images are generated: the terminal GIF is a recorded real run of
