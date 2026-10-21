@@ -1,0 +1,8 @@
+{"title": "How aisync stops two AI tools from colliding",
+ "subtitle": "tool A = claude-code · tool B = codex · one shared hub",
+ "stages": [["claim", "A claims", "claude-code · Summary.tsx", "claude-code holds Summary.tsx"],
+            ["overlap", "B: exit 3", "codex wants the same file", "codex asks too: refused"],
+            ["blocked", "B logs it", "kind: blocked", "aisync log --kind blocked"],
+            ["news", "A hears it", "mid-session, unasked", "hook injects the news"],
+            ["release", "A releases", "work committed", "commit, then aisync release"],
+            ["proceed", "B proceeds", "unblocked + logged", "claim again: exit 0"]]}

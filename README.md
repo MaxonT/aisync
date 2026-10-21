@@ -1,68 +1,69 @@
-# aisync
+<div align="center">
 
-> What: one standup for all your AI coding tools. Claude Code, Codex and Cursor share rules, a journal and file claims, and hear what the others did mid-session.
-> Why: when several agents work on the same repos, none of them knows what the others just changed.
-> How: `pip install` it, run `aisync demo` to see a hub after two weeks of use, then `aisync init` and `aisync install-hooks`.
+<img src="docs/assets/banner.svg" width="100%" alt="aisync: one standup for all your AI coding tools"/>
+
+# aisync: one standup for all your AI coding agents
+
+**Claude Code, Codex and Cursor share rules, a journal and file claims, and hear what the others did mid-session.**
 
 [![ci](https://github.com/MaxonT/aisync/actions/workflows/ci.yml/badge.svg)](https://github.com/MaxonT/aisync/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/MaxonT/aisync)](https://github.com/MaxonT/aisync/releases)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![deps](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-> [!NOTE]
-> **The core idea.** Every tool reads and writes one local hub (`~/.ai-sync/`, a git repo).
-> Rules live in one file and are copied into each tool's own rule file. Work is logged to an
-> append-only, **hash-chained journal** (`aisync verify` catches any hand edit). Before touching
-> files an agent **claims** them; an overlapping claim exits with code **3**, so the agent stops
-> and coordinates. **Hooks** inject "what the other tools did since you last looked" into a
-> running Claude Code, Codex or Cursor session, and stay silent when nothing changed.
+**English** · [中文](README.zh-CN.md) · [Website](https://maxont.github.io/aisync/) · [Demo status board](https://maxont.github.io/aisync/board/)
 
-If this saves your agents from stepping on each other, a star helps other people find it.
+</div>
+
+> [!NOTE]
+> **Your AI tools are coworkers who never talk. aisync is their standup.**
+> Every tool works out of one local hub (`~/.ai-sync/`, a git repo). Before editing, an agent
+> **claims** files, and an overlapping claim exits with code 3, so the agent stops before it collides.
+> Every decision, blocker and commit goes into one **hash-chained journal**. **Hooks** tell a
+> running Claude Code, Codex or Cursor session what the other tools just did, and stay silent when
+> nothing changed.
+
+If aisync keeps your agents from stepping on each other, a star helps other people find it.
 
 ## Install
 
-**Give it to your AI** (it reads the page, does a dry run first and asks before changing anything):
+**Give it to your AI.** It reads the page, does a dry run first and asks before it changes anything:
 
 ```text
 Read https://maxont.github.io/aisync/install and install aisync for me.
 ```
 
-**Or in a terminal** (installs with uv, pipx or pip; never edits shell config):
+**Or in a terminal.** It installs with uv, pipx or pip and never edits your shell config:
 
 ```bash
 curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 ```
 
-Python 3.11+, macOS or Linux, no dependencies beyond the standard library and `git`.
+Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
-## See it first: `aisync demo`
+## See it
 
-`aisync demo` builds a throwaway hub in a temp dir with a synthetic two-week journal: five tools
-(claude-code, codex, cursor, windsurf, gemini-cli) on three made-up repos, with overlapping claims,
-a blocker that got unblocked, shared rules added along the way and a real rule conflict.
-Your own hub and tool configs are never touched.
+<img src="docs/assets/demo.gif" width="100%" alt="A real terminal: aisync demo prints a hub's status, claude-code claims app/api/refunds.py, codex claims the same file and is refused with OVERLAP and exit 3, codex logs a blocker, claude-code hears it through aisync news, releases the file, and codex's claim then succeeds"/>
 
-```text
-$ aisync demo
-hub      /tmp/aisync-demo-k2x8/
-watcher  NOT running (heartbeat -)
-journal  66 events, chain intact
-targets  claude-code: in sync, codex: differs, windsurf: in sync
-metrics  183 cycles, failure rate 1.1%, avg 544 ms, 27 commits harvested, 2 rule copies updated
-CONFLICT codex: rules changed in preferences.md and in this copy -> aisync resolve codex --take truth|target
-hook     claude-code  64 calls/24h, 10 injected, 0 errors, avg 28 ms
-claim    cursor       storefront-web [src/pages/checkout/] until 16:05: show refund credit on checkout summary
-claim    claude-code  storefront-web [src/pages/checkout/Summary.tsx] until 16:15: wire /quote credit lines into Summary
-BLOCKED  gemini-cli   infra: prod plan needs a read-only role on the billing account; waiting for access
-agents
-  claude-code    storefront-web: claimed: wire /quote credit lines into Summary
-  codex          checkout-api: test: refund webhook end-to-end in the sandbox
-  ...
-```
+<sub>A real terminal run: `aisync demo` (synthetic data), then two tools reach for the same file.
+Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · the same demo hub as a
+[status board](https://maxont.github.io/aisync/board/).</sub>
+
+| | Rules sync tools | aisync |
+|---|---|---|
+| **Claims** | None: two agents can edit the same file at once | `aisync claim` first; an overlap exits with code 3 and says who holds the files |
+| **Journal** | No shared record of who did what | One append-only, hash-chained log of commits, decisions and blockers (`aisync verify`) |
+| **Mid-session news** | Rules load when a session starts, then go quiet | Hooks inject what the other tools just did into the running session |
+
+aisync also does the rules part: one rules block copied into every tool's own rule file, synced 3-way, conflicts never overwritten.
+
+**Dogfooded:** 1,600+ journal events from 5 AI tools over 9 days.
 
 ## Use it
 
 ```bash
+aisync demo                                   # a throwaway hub with a synthetic two-week journal
 aisync init                                   # create ~/.ai-sync (override with AISYNC_HOME)
 aisync install-hooks                          # shows a diff of every tool config it would change, then asks
 aisync watch &                                # event-driven sync loop (or run `aisync sync` by hand)
@@ -87,14 +88,18 @@ aisync release -a codex -p checkout-api
 | `hook <tool>` | entry point for Claude Code, Codex and Cursor hooks (reads hook JSON, never fails) |
 | `install-hooks` | wire the hooks, seed the rules block, add the git `Agent:` trailer hook; diff first, asks before writing (`--dry-run`, `--yes`) |
 | `status` | health, conflicts, claims, blockers, metrics (exit 1 when something needs you) |
+| `board` | write the hub as one static HTML page: claims, blockers, who did what, timeline |
 | `report` | read-only self-check: silent tools, commits without an `Agent:` trailer, stale blockers |
 | `tail` | latest journal events |
 | `verify` | check the hash chain |
 | `sync` / `watch` | run one sync cycle / the debounced, event-driven loop |
-| `resolve` / `resume` | rule a rule conflict / clear failure counters after a pause |
-| `demo` | the throwaway hub above |
+| `resolve` / `resume` | rule on a rule conflict / clear failure counters after a pause |
+| `demo` | the throwaway hub shown above |
 
 ## How it works
+
+<p align="center"><img src="docs/assets/how-it-works.gif" width="100%" alt="Six steps: tool A claims a file, tool B is refused with exit 3, B logs a blocker, a hook tells A mid-session, A releases, B proceeds"/></p>
+<p align="center"><sub><a href="https://maxont.github.io/aisync/how-it-works/">Step through it at your own pace</a> (play, pause, ← →)</sub></p>
 
 A sync cycle is `harvest` (new git commits in watched repos become journal events, attributed by
 their `Agent:` trailer) → `rules` (new entries in repos you list in `rule_sources`) → `distribute`
@@ -128,10 +133,29 @@ path = "~/.claude/CLAUDE.md"
 To keep `aisync watch` running, start it from your login items, a systemd user unit or a launchd
 agent that runs `aisync watch`; create `~/.ai-sync/STOP` to stop it cleanly.
 
+## Standing on the shoulders of
+
+> aisync: AGENTS.md, but for live coordination between AI tools.
+
+| Project | How it shaped aisync |
+|---|---|
+| [![AGENTS.md stars](https://img.shields.io/github/stars/agentsmd/agents.md?style=social&label=AGENTS.md)](https://github.com/agentsmd/agents.md) | The starting idea: one plain-text instruction file every agent reads, no SDK. aisync keeps that shape for shared rules (one rules block copied into each tool's own AGENTS.md / CLAUDE.md) and adds what a static file cannot say: who is editing what right now, and what changed since the session started. |
+| [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | Mid-session news rides on Claude Code hooks: `aisync install-hooks` adds SessionStart, UserPromptSubmit and PostToolUse entries to ~/.claude/settings.json, and `aisync hook claude-code` answers with hookSpecificOutput.additionalContext only when another tool changed something. |
+| [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex reads ~/.codex/AGENTS.md, which is where aisync seeds the shared rules block, and its hooks.json takes the same SessionStart / UserPromptSubmit / PostToolUse events, so `aisync hook codex` reuses the Claude Code reply format. |
+| [Cursor](https://cursor.com/docs/agent/hooks) | Cursor hooks (~/.cursor/hooks.json) deliver the rules and progress at sessionStart and the news after each postToolUse through additional_context, because Cursor's User Rules live inside the app instead of a file aisync could sync. |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | The journal borrows git's hash chain: every event stores the id of the one before it and its own id is a SHA-256 of that link plus its body, so `aisync verify` spots any edited, lost or reordered line. The hub itself is a local git repo. |
+
+aisync is an independent project, not affiliated with the projects above.
+
 ## Development
 
 ```bash
 python3 -m unittest discover -s tests     # includes build wheel -> fresh venv -> aisync demo + verify
 ```
+
+The images are generated: the terminal GIF is a recorded real run of
+[`.github/refine/demo-terminal.json`](.github/refine/demo-terminal.json), the how-it-works animation
+comes from [`.github/refine/how-it-works.stages.json`](.github/refine/how-it-works.stages.json), and the
+credits above from [`.github/refine/lineage.json`](.github/refine/lineage.json). All demo data is synthetic.
 
 MIT licensed.

@@ -1,0 +1,42 @@
+{
+  "repo": "MaxonT/aisync",
+  "name": "aisync",
+  "purpose": "one standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news for Claude Code, Codex and Cursor",
+  "domain": "live coordination between AI tools",
+  "tagline": "claims · journal · mid-session news",
+  "topics": ["agents", "claude-code", "codex", "cursor", "agents-md", "multi-agent", "cli"],
+  "credits": [
+    {
+      "name": "AGENTS.md",
+      "repo": "agentsmd/agents.md",
+      "relation": "analogy",
+      "upstream_does": "how agents should behave",
+      "headline": true,
+      "evidence": "The starting idea: one plain-text instruction file every agent reads, no SDK. aisync keeps that shape for shared rules (one rules block copied into each tool's own AGENTS.md / CLAUDE.md) and adds what a static file cannot say: who is editing what right now, and what changed since the session started."
+    },
+    {
+      "name": "Claude Code",
+      "repo": "anthropics/claude-code",
+      "relation": "built-on",
+      "evidence": "Mid-session news rides on Claude Code hooks: `aisync install-hooks` adds SessionStart, UserPromptSubmit and PostToolUse entries to ~/.claude/settings.json, and `aisync hook claude-code` answers with hookSpecificOutput.additionalContext only when another tool changed something."
+    },
+    {
+      "name": "Codex",
+      "repo": "openai/codex",
+      "relation": "built-on",
+      "evidence": "Codex reads ~/.codex/AGENTS.md, which is where aisync seeds the shared rules block, and its hooks.json takes the same SessionStart / UserPromptSubmit / PostToolUse events, so `aisync hook codex` reuses the Claude Code reply format."
+    },
+    {
+      "name": "Cursor",
+      "url": "https://cursor.com/docs/agent/hooks",
+      "relation": "built-on",
+      "evidence": "Cursor hooks (~/.cursor/hooks.json) deliver the rules and progress at sessionStart and the news after each postToolUse through additional_context, because Cursor's User Rules live inside the app instead of a file aisync could sync."
+    },
+    {
+      "name": "git",
+      "repo": "git/git",
+      "relation": "inspired-by",
+      "evidence": "The journal borrows git's hash chain: every event stores the id of the one before it and its own id is a SHA-256 of that link plus its body, so `aisync verify` spots any edited, lost or reordered line. The hub itself is a local git repo."
+    }
+  ]
+}
