@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, collab, core, demo, hooks, watch
+from . import __version__, board, collab, core, demo, hooks, watch
 
 DEFAULT_TARGETS = [("claude-code", "~/.claude/CLAUDE.md"),
                    ("codex", "~/.codex/AGENTS.md")]
@@ -352,7 +352,19 @@ def cmd_demo(a) -> int:
     print(f"demo hub with a synthetic two-week journal: {root}\n")
     print_status(core.status(cfg), cfg)
     print(f"\nexplore it (your real hub is untouched):\n  export AISYNC_HOME={root}\n"
-          "  aisync tail -n 15; aisync claims; aisync report; aisync verify")
+          "  aisync tail -n 15; aisync claims; aisync report; aisync verify; aisync board")
+    return 0
+
+
+def cmd_board(a) -> int:
+    cfg = core.load_config()
+    if not (cfg.root / "journal.jsonl").exists():
+        print(f"error: no hub at {cfg.root} (run `aisync init`, or `aisync demo` to try one)", file=sys.stderr)
+        return 2
+    out = Path(a.out).expanduser()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    core.atomic_write(out, board.render(cfg))
+    print(f"wrote {out}: open it in a browser (it shows journal summaries and file names; read it before sharing)")
     return 0
 
 
@@ -470,6 +482,10 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("demo", help="build a throwaway hub with a synthetic two-week journal and show its status")
     s.add_argument("--dir", help="where to build it (default: a new temp dir)")
     s.set_defaults(fn=cmd_demo)
+
+    s = sub.add_parser("board", help="write the hub as one static HTML status board (claims, blockers, timeline)")
+    s.add_argument("--out", "-o", default="board.html", help="output file (default: board.html)")
+    s.set_defaults(fn=cmd_board)
 
     s = sub.add_parser("verify", help="check the journal hash chain")
     s.set_defaults(fn=cmd_verify)

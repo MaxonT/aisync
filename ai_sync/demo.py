@@ -18,7 +18,7 @@ import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import collab, core
+from . import board, collab, core
 
 TOOLS = ("claude-code", "codex", "cursor", "windsurf", "gemini-cli")
 
@@ -256,6 +256,7 @@ def build(root: Path | None = None) -> Path:
             f'\n[[target]]\nlabel = "{label}"\npath = "{path}"\n' for label, path in targets.items()))
     (root / ".gitignore").write_text("backups/\ngithooks/\nstate/*\n!state/current.json\nSTOP\n")
     (root / "journal.jsonl").write_text("")
+    (root / board.DEMO_MARKER).write_text("Synthetic hub built by `aisync demo`: every tool, repo and event is made up.\n")
     cfg = core.load_config(root)
     now = datetime.now().astimezone().replace(microsecond=0)
 
