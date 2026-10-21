@@ -4,6 +4,7 @@
 # How:
 #   curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 #   bash install.sh --dry-run        # show what would happen, change nothing
+#   bash install.sh --version 0.1.0  # a specific release (default: the one this site ships)
 #   bash install.sh --ref main       # install from a branch, tag or commit instead (needs git)
 #   bash install.sh --from FILE.whl  # install a wheel you already have
 #
@@ -22,6 +23,8 @@ DRY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
+    --version) VERSION="${2:?--version needs a release number, e.g. 0.1.0}"; VERSION="${VERSION#v}"
+               SPEC="${REPO}/releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl"; shift ;;
     --ref) SPEC="git+${REPO}@${2:?--ref needs a branch, tag or commit}"; shift ;;
     --from) SPEC="${2:?--from needs a wheel file or URL}"; shift ;;
     -h|--help) sed -n '2,13p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;

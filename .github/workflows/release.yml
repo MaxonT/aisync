@@ -79,7 +79,8 @@ jobs:
       - name: curl install.sh | bash
         run: |
           apt-get update -qq && apt-get install -y -qq curl git
-          curl -fsSL https://maxont.github.io/aisync/install.sh | bash
+          # --version ties the check to this tag, not to whatever version the live site pins
+          curl -fsSL https://maxont.github.io/aisync/install.sh | bash -s -- --version "${TAG#v}"
       - name: The installed command is this release
         run: |
           export PATH="$HOME/.local/bin:$PATH" AISYNC_NO_NOTIFY=1

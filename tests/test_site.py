@@ -117,6 +117,19 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn("releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl", text)
         self.assertEqual(subprocess.run(["bash", "-n", str(self.SCRIPT)]).returncode, 0)
 
+    def test_version_flag_installs_that_release(self):
+        r = subprocess.run(["bash", str(self.SCRIPT), "--dry-run", "--version", "v9.8.7"],
+                           capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("releases/download/v9.8.7/aisync-9.8.7-py3-none-any.whl", r.stdout)
+        release = (ROOT / ".github/workflows/release.yml").read_text()
+        self.assertIn('install.sh | bash -s -- --version "${TAG#v}"', release)
+
+    def test_help_prints_only_the_header(self):
+        r = subprocess.run(["bash", str(self.SCRIPT), "--help"], capture_output=True, text=True, timeout=30)
+        self.assertTrue(r.stdout.startswith("What: installer for aisync"))
+        self.assertNotIn("set -euo", r.stdout)
+
     def test_never_sudo_never_shell_config(self):
         code = [l for l in self.SCRIPT.read_text().splitlines() if not l.lstrip().startswith("#")]
         self.assertFalse([l for l in code if re.search(r"\bsudo\b", l)])
