@@ -1,59 +1,101 @@
 <!doctype html>
 <!--
 What: the aisync home page (served at https://maxont.github.io/aisync/).
-Why: one page that says what aisync is and links to install and the source.
-How: GitHub Pages from /docs; plain HTML, no scripts, no network requests.
+Why: one page that says what aisync is, shows it working, and links to install, the demo board and the source.
+How: GitHub Pages from /docs; plain HTML and CSS, no scripts, no requests to other sites.
 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>aisync: one standup for all your AI coding tools</title>
-<meta name="description" content="Shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor. Python stdlib only.">
+<meta name="description" content="Your AI tools are coworkers who never talk; aisync is their standup. File claims, a hash-chained journal and mid-session news hooks for Claude Code, Codex and Cursor. Python stdlib only.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="aisync: one standup for all your AI coding tools">
+<meta property="og:description" content="File claims, a hash-chained journal and mid-session news hooks for Claude Code, Codex and Cursor.">
+<meta property="og:url" content="https://maxont.github.io/aisync/">
+<meta property="og:image" content="https://maxont.github.io/aisync/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{--bg:#fbf8f3;--card:#fff;--ink:#2a2522;--muted:#6d655f;--line:#e7dfd5;--soft:#f4eee5;--accent:#d6336c;--code:#1e1b19;--codeink:#f2ece4}
 @media (prefers-color-scheme:dark){:root{--bg:#161418;--card:#211e25;--ink:#eee9e4;--muted:#a69da0;--line:#38333d;--soft:#1c1a20;--accent:#f06595;--code:#0f0e11}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);line-height:1.7;font-size:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:820px;margin:0 auto;padding:40px 20px 80px}
+.wrap{max-width:880px;margin:0 auto;padding:28px 20px 80px}
 a{color:var(--accent)}
-h1{font-size:clamp(30px,6vw,48px);line-height:1.15;margin:0 0 10px}
-h2{margin:40px 0 10px;font-size:24px}
-.lead{color:var(--muted);font-size:19px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0}
+nav{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
+nav a{text-decoration:none}
+nav .brand{font-weight:700;color:var(--ink);margin-right:auto}
+.banner{display:block;width:100%;border-radius:16px;margin:22px 0 8px}
+h1{font-size:clamp(28px,5.5vw,44px);line-height:1.15;margin:18px 0 10px}
+h2{margin:48px 0 10px;font-size:24px}
+.lead{color:var(--muted);font-size:19px;margin:0 0 20px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:20px 0 8px}
+.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+.media{display:block;width:100%;border-radius:14px;border:1px solid var(--line);background:#0d1117}
+.caption{color:var(--muted);font-size:14px;margin:8px 0 0}
+pre{background:var(--code);color:var(--codeink);padding:14px 16px;border-radius:12px;overflow:auto;font-size:14px;line-height:1.55;margin:10px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}
+p code,td code,li code{background:var(--soft);padding:1px 6px;border-radius:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:18px 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px}
 .card b{display:block;margin-bottom:4px}
-pre{background:var(--code);color:var(--codeink);padding:14px 16px;border-radius:12px;overflow:auto;font-size:14px;line-height:1.55}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}
-p code{background:var(--soft);padding:1px 6px;border-radius:6px}
-nav a{margin-right:16px;font-size:14px;text-decoration:none}
-.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;font-weight:600;margin-right:10px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+th,td{text-align:left;vertical-align:top;padding:12px 14px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{font-size:13px;color:var(--muted);font-weight:600}
+td:first-child{font-weight:700;white-space:nowrap}
+.note{border-left:4px solid var(--accent);background:var(--card);border-radius:0 14px 14px 0;padding:14px 18px;margin:18px 0}
 .muted{color:var(--muted)}
+.stat{font-size:15px}
+footer{margin-top:56px;color:var(--muted);font-size:14px}
 </style>
 </head>
 <body>
 <div class="wrap">
-<nav><a href="install/">Install</a><a href="https://github.com/MaxonT/aisync">GitHub</a></nav>
-<h1>aisync</h1>
-<p class="lead">One standup for all your AI coding tools. Claude Code, Codex and Cursor share one set of rules, one journal and one list of who is editing what, and hear what the others did while they work.</p>
-<p><a class="btn" href="install/">Install</a><a href="https://github.com/MaxonT/aisync">Source on GitHub</a></p>
+<nav><a class="brand" href="./">aisync</a><a href="install/">Install</a><a href="how-it-works/">How it works</a><a href="board/">Demo board</a><a href="https://github.com/MaxonT/aisync">GitHub</a></nav>
+
+<img class="banner" src="assets/banner.svg" alt="aisync: one standup for all your AI coding tools">
+
+<h1>Your AI tools are coworkers who never talk. aisync is their standup.</h1>
+<p class="lead">Claude Code, Codex and Cursor share one set of rules, one journal and one list of who is editing what, and hear what the others did while they work.</p>
+<div class="cta"><a class="btn" href="install/">Install</a><a class="btn ghost" href="board/">See the demo board</a><a href="https://github.com/MaxonT/aisync">Source on GitHub</a></div>
+
+<h2>Two tools reach for the same file</h2>
+<img class="media" src="assets/demo.gif" alt="A real terminal: aisync demo prints a hub's status, claude-code claims app/api/refunds.py, codex claims the same file and is refused with OVERLAP and exit 3, codex logs a blocker, claude-code hears it, releases the file, and codex's claim succeeds">
+<p class="caption">A real terminal run. <code>aisync demo</code> builds a throwaway hub with a synthetic two-week journal; nothing on your machine is touched.</p>
+
+<h2>What a rules file cannot do</h2>
+<table>
+<thead><tr><th></th><th>Rules sync tools</th><th>aisync</th></tr></thead>
+<tbody>
+<tr><td>Claims</td><td>None: two agents can edit the same file at once</td><td><code>aisync claim</code> first; an overlap exits with code 3 and says who holds the files</td></tr>
+<tr><td>Journal</td><td>No shared record of who did what</td><td>One append-only, hash-chained log of commits, decisions and blockers</td></tr>
+<tr><td>Mid-session news</td><td>Rules load when a session starts, then go quiet</td><td>Hooks inject what the other tools just did into the running session</td></tr>
+</tbody>
+</table>
+<p class="muted">aisync also syncs the rules: one block copied into every tool's own rule file, 3-way, conflicts never overwritten.</p>
+
+<h2>How it works</h2>
+<img class="media" src="assets/how-it-works.gif" alt="Six steps: tool A claims a file, tool B is refused with exit 3, B logs a blocker, a hook tells A mid-session, A releases, B proceeds">
+<p class="caption"><a href="how-it-works/">Step through it at your own pace</a> (play, pause, arrow keys).</p>
 
 <div class="grid">
-<div class="card"><b>Shared rules</b>One rules file, copied into every tool's own rule file with a 3-way sync. Any agent can add a rule; conflicts are never overwritten.</div>
-<div class="card"><b>Hash-chained journal</b>Every decision, blocker and commit in one append-only log. <code>aisync verify</code> catches any hand edit.</div>
-<div class="card"><b>File claims</b>Agents claim files before editing. An overlapping claim exits with code 3, so the agent stops and coordinates.</div>
-<div class="card"><b>Mid-session news</b>Hooks tell a running Claude Code, Codex or Cursor session what the other tools just did. Silent when nothing changed.</div>
+<div class="card"><b>File claims</b>Before editing, an agent runs <code>aisync claim</code>. An overlapping claim exits with code 3, so the agent stops and coordinates instead of colliding.</div>
+<div class="card"><b>Hash-chained journal</b>Every decision, blocker and commit in one append-only log. Each event links to the one before it; <code>aisync verify</code> catches any edit.</div>
+<div class="card"><b>Mid-session news</b>Claude Code, Codex and Cursor hooks tell a running session what the other tools just did. Silent when nothing changed, so a quiet hub costs no tokens.</div>
+<div class="card"><b>Shared rules</b>Any agent can add a rule with <code>aisync rule add</code>; every tool's own rule file gets it on the next sync.</div>
 </div>
 
-<h2>See it in ten seconds</h2>
-<pre>aisync demo     # a throwaway hub with a synthetic two-week journal: 5 tools, claims, a blocker, a rule conflict</pre>
-
 <h2>Install</h2>
-<p>Give this sentence to your AI agent:</p>
+<p>Give this sentence to your AI agent. It reads the install page, does a dry run first and asks before it changes anything:</p>
 <pre>Read https://maxont.github.io/aisync/install and install aisync for me.</pre>
-<p class="muted">Or in a terminal: <code>curl -fsSL https://maxont.github.io/aisync/install.sh | bash</code></p>
+<p class="muted">Or in a terminal: <code>curl -fsSL https://maxont.github.io/aisync/install.sh | bash</code>. Python 3.11+ and git, macOS or Linux, standard library only.</p>
 
-<p class="muted" style="margin-top:40px">Python 3.11+, standard library only. MIT licensed.</p>
+<p class="note stat"><b>Dogfooded:</b> 1,600+ journal events from 5 AI tools over 9 days.</p>
+
+<footer>aisync is MIT licensed and independent: not affiliated with Anthropic, OpenAI, Cursor or the AGENTS.md project. <a href="https://github.com/MaxonT/aisync">github.com/MaxonT/aisync</a></footer>
 </div>
 </body>
 </html>

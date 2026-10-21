@@ -10,6 +10,11 @@ How: published at docs/install/index.html (GitHub Pages from /docs), next to doc
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Install aisync</title>
 <meta name="description" content="Install aisync by giving this page to your AI. One standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor.">
+<meta property="og:title" content="Install aisync">
+<meta property="og:description" content="Hand this page to your AI agent: it checks what it can do, dry-runs first and asks before changing anything.">
+<meta property="og:url" content="https://maxont.github.io/aisync/install/">
+<meta property="og:image" content="https://maxont.github.io/aisync/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{--bg:#fbf8f3;--card:#fff;--ink:#2a2522;--muted:#6d655f;--line:#e7dfd5;--soft:#f4eee5;--accent:#d6336c;--code:#1e1b19;--codeink:#f2ece4}
 @media (prefers-color-scheme:dark){:root{--bg:#161418;--card:#211e25;--ink:#eee9e4;--muted:#a69da0;--line:#38333d;--soft:#1c1a20;--accent:#f06595;--code:#0f0e11}}
@@ -34,7 +39,7 @@ nav a{margin-right:16px;font-size:14px;text-decoration:none}
 </head>
 <body>
 <div class="wrap">
-<nav><a href="../">Home</a><a href="https://github.com/MaxonT/aisync">GitHub</a></nav>
+<nav><a href="../">Home</a><a href="../board/">Demo board</a><a href="https://github.com/MaxonT/aisync">GitHub</a></nav>
 
 <h1>Install aisync</h1>
 <p class="lead">One standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor. You install it by handing this page to your AI.</p>
@@ -43,7 +48,7 @@ nav a{margin-right:16px;font-size:14px;text-decoration:none}
 <div class="card">
 <p>Paste this into your AI coding agent (Claude Code, Cursor, Codex, or any capable agent). It reads this page and sets everything up, asking before it changes anything.</p>
 <pre>Read https://maxont.github.io/aisync/install and install aisync for me.</pre>
-<p>You need Python 3.11 or newer and an agent that can run shell commands.</p>
+<p>You need Python 3.11 or newer, git, and an agent that can run shell commands.</p>
 <p class="muted">Prefer the terminal? One line installs the <code>aisync</code> command (it never edits your shell config):</p>
 <pre>curl -fsSL https://maxont.github.io/aisync/install.sh | bash</pre>
 <p class="muted">Want to read the script first? <a href="../install.sh">install.sh</a>. Add <code>--dry-run</code> to see what it would do without changing anything.</p>
@@ -62,7 +67,8 @@ nav a{margin-right:16px;font-size:14px;text-decoration:none}
 <h3>2. Preconditions</h3>
 <ul>
 <li><code>python3 --version</code> reports 3.11 or newer.</li>
-<li>One of <code>uv</code>, <code>pipx</code> or <code>python3 -m pip</code> is available. Prefer them in that order.</li>
+<li><code>git --version</code> works. aisync keeps its hub in a local git repo; without git, stop and tell the user how to install it.</li>
+<li>One of <code>uv</code>, <code>pipx</code> or <code>python3 -m pip</code> is available. Prefer them in that order. When the system Python refuses user installs (PEP 668), the script uses its own virtualenv in <code>~/.local/share/aisync</code> instead.</li>
 <li>Never use <code>sudo</code>. Never install system-wide.</li>
 </ul>
 
