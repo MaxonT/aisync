@@ -1,0 +1,44 @@
+{
+ "title": "aisync 演示：两个 AI 同时要改一个文件",
+ "tty": true,
+ "env": {
+  "AISYNC_HOME": "aisync-demo",
+  "AISYNC_NO_NOTIFY": "1",
+  "NO_COLOR": ""
+ },
+ "steps": [
+  {
+   "cmd": "aisync demo --dir aisync-demo",
+   "max_lines": 16,
+   "pause": 3.0
+  },
+  {
+   "cmd": "aisync claim -a claude-code -p checkout-api -f app/api/refunds.py -m \"加上退款原因\"",
+   "pause": 1.5
+  },
+  {
+   "cmd": "aisync news -a claude-code -s chat-1",
+   "pause": 1.2
+  },
+  {
+   "cmd": "aisync claim -a codex -p checkout-api -f app/api/refunds.py -m \"重命名退款字段\"",
+   "pause": 4.0
+  },
+  {
+   "cmd": "aisync log -a codex -p checkout-api -k blocked -m \"等 claude-code 改完 app/api/refunds.py\"",
+   "pause": 1.5
+  },
+  {
+   "cmd": "aisync news -a claude-code -s chat-1",
+   "pause": 4.0
+  },
+  {
+   "cmd": "aisync release -a claude-code -p checkout-api",
+   "pause": 1.2
+  },
+  {
+   "cmd": "aisync claim -a codex -p checkout-api -f app/api/refunds.py -m \"重命名退款字段\"",
+   "pause": 4.0
+  }
+ ]
+}

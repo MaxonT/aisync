@@ -1,0 +1,44 @@
+{
+ "title": "aisync demo: two AI tools reach for the same file",
+ "tty": true,
+ "env": {
+  "AISYNC_HOME": "aisync-demo",
+  "AISYNC_NO_NOTIFY": "1",
+  "NO_COLOR": ""
+ },
+ "steps": [
+  {
+   "cmd": "aisync demo --dir aisync-demo",
+   "max_lines": 16,
+   "pause": 3.0
+  },
+  {
+   "cmd": "aisync claim -a claude-code -p checkout-api -f app/api/refunds.py -m \"add refund reasons\"",
+   "pause": 1.5
+  },
+  {
+   "cmd": "aisync news -a claude-code -s chat-1",
+   "pause": 1.2
+  },
+  {
+   "cmd": "aisync claim -a codex -p checkout-api -f app/api/refunds.py -m \"rename refund fields\"",
+   "pause": 4.0
+  },
+  {
+   "cmd": "aisync log -a codex -p checkout-api -k blocked -m \"waiting for claude-code: app/api/refunds.py\"",
+   "pause": 1.5
+  },
+  {
+   "cmd": "aisync news -a claude-code -s chat-1",
+   "pause": 4.0
+  },
+  {
+   "cmd": "aisync release -a claude-code -p checkout-api",
+   "pause": 1.2
+  },
+  {
+   "cmd": "aisync claim -a codex -p checkout-api -f app/api/refunds.py -m \"rename refund fields\"",
+   "pause": 4.0
+  }
+ ]
+}

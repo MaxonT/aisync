@@ -1,0 +1,8 @@
+{"title": "aisync 如何拦住两个 AI 撞车",
+ "subtitle": "A = claude-code · B = codex · 同一个 hub",
+ "stages": [["claim", "A 认领", "claude-code · Summary.tsx", "claude-code 认领 Summary.tsx"],
+            ["overlap", "B 被拦下", "codex 想改同一个文件", "codex 也想改：退出码 3"],
+            ["blocked", "B 记下受阻", "kind: blocked", "aisync log 记一条 blocked"],
+            ["news", "A 收到消息", "不用开口问", "hook 把消息注入 A 的会话"],
+            ["release", "A 释放", "工作已提交", "提交，然后 aisync release"],
+            ["proceed", "B 继续", "解除受阻并记录", "再次认领：退出码 0"]]}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="12" fill="#d6336c"/>
+  <text x="80" y="150" fill="#f783ac" font-family="monospace" font-size="34" font-weight="700">inspired by AGENTS.md ★25k</text>
+  <text x="80" y="300" fill="#f0f6fc" font-family="system-ui,sans-serif" font-size="76" font-weight="800">aisync</text>
+  <text x="80" y="380" fill="#8b949e" font-family="system-ui,sans-serif" font-size="34">AGENTS.md, but for live coordination between AI tools</text>
+  <text x="80" y="520" fill="#ffc2d4" font-family="monospace" font-size="36" font-weight="700">claims · journal · mid-session news</text>
+  <text x="80" y="585" fill="#6e7681" font-family="monospace" font-size="26">github.com/MaxonT/aisync</text>
+</svg>
