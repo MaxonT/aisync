@@ -1,0 +1,33 @@
+# What: packaging for aisync. Why: ships the `aisync` console script that every AI tool calls.
+# How: `pip install .` (or -e .); tests: python3 -m unittest discover -s tests
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aisync"
+version = "0.1.0"
+description = "One standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = []
+keywords = ["ai", "agents", "claude-code", "codex", "cursor", "coordination", "developer-tools"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Environment :: Console",
+  "Topic :: Software Development",
+]
+
+[project.urls]
+Homepage = "https://maxont.github.io/aisync"
+Source = "https://github.com/MaxonT/aisync"
+
+[project.scripts]
+aisync = "ai_sync.cli:main"
+
+[tool.setuptools]
+packages = ["ai_sync"]
