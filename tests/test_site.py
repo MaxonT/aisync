@@ -92,6 +92,7 @@ class SiteTests(unittest.TestCase):
         for must in ("For humans", "FOR YOUR AI", "Capability gate", "--dry-run", "shell config",
                      "Be honest about failure", "Report back", "git --version"):
             self.assertIn(must, page)
+        self.assertNotIn("python3 -m ai_sync", page)           # not true after a uv, pipx or venv install
 
     def test_demo_board_page_is_labelled_synthetic(self):
         page = (ROOT / "docs/board/index.html").read_text()
