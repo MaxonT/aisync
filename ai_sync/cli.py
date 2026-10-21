@@ -169,6 +169,16 @@ def cmd_rule(a) -> int:
     return 0
 
 
+def _paint(text: str, code: str, stream=None) -> str:
+    """ANSI colour only for a human at a terminal; pipes, hooks and NO_COLOR get plain text."""
+    stream = stream or sys.stdout
+    return f"\x1b[{code}m{text}\x1b[0m" if stream.isatty() and not os.environ.get("NO_COLOR") else text
+
+
+def _file_list(files) -> str:
+    return f"[{', '.join(files)}]" if files else "[whole repo]"
+
+
 def cmd_claim(a) -> int:
     files = [f.strip() for f in (a.files or "").split(",") if f.strip()]
     try:
@@ -178,11 +188,16 @@ def cmd_claim(a) -> int:
         print(f"error: {ex}", file=sys.stderr)
         return 2
     c = rep["claim"]
-    print(f"claimed {c['project']} {c['files'] or '[whole repo]'} for {c['agent']} until {c['expires'][11:16]}")
+    if not rep["overlaps"]:
+        print(_paint("claimed", "32") + f" {c['project']} {_file_list(c['files'])} for {c['agent']} until {c['expires'][11:16]}")
+        return 0
     for o in rep["overlaps"]:
-        print(f"OVERLAP: {o['agent']} is working on {o['project']} {o['files'] or '[whole repo]'}: {o['summary']} "
-              f"(until {o['expires'][11:16]}). Coordinate or pick other files.", file=sys.stderr)
-    return 3 if rep["overlaps"] else 0
+        print(_paint("OVERLAP:", "1;31", sys.stderr) + f" {o['agent']} is working on {o['project']} {_file_list(o['files'])} "
+              f"until {o['expires'][11:16]}: {o['summary']}", file=sys.stderr)
+    others = ", ".join(sorted({o["agent"] for o in rep["overlaps"]}))
+    print(f"stop and coordinate with {others}, or pick other files (exit 3). "
+          f"Your claim is noted, so {others} can see you are waiting.", file=sys.stderr)
+    return 3
 
 
 def cmd_release(a) -> int:
@@ -227,21 +242,28 @@ def print_status(s: dict, cfg: core.Config) -> None:
     print(f"metrics  {m['cycles']} cycles, failure rate {m['failure_rate']:.1%}, avg {m['avg_ms']} ms, "
           f"{m['commits_harvested']} commits harvested, {m['targets_updated']} rule copies updated")
     for label, c in s["conflicts"].items():
-        print(f"CONFLICT {label}: {c['reason']} ({c['path']}) -> aisync resolve {label} --take truth|target")
+        print(_paint("CONFLICT", "1;31") + f" {label}: {c['reason']} ({collab._tilde(c['path'])}) "
+              f"-> aisync resolve {label} --take truth|target")
     for tool, hs in sorted(hooks.hook_stats(cfg).items()):
         print(f"hook     {tool:<12} {hs['calls']} calls/24h, {hs['injected']} injected, {hs['errors']} errors, "
-              f"avg {hs['avg_ms']} ms, last {hs['last']}")
+              f"avg {hs['avg_ms']} ms, last {_clock(hs['last'])}")
     claims = collab.load_claims(cfg)
     for c in claims:
-        print(f"claim    {c['agent']:<12} {c['project']} [{', '.join(c['files']) or 'whole repo'}] until {c['expires'][11:16]}: "
+        print(f"claim    {c['agent']:<12} {c['project']} {_file_list(c['files'])} until {c['expires'][11:16]}: "
               f"{core._short(c['summary'], 60)}")
     for b in build_open_blocked(cfg):
-        print(f"BLOCKED  {b['agent']:<12} {b['project'] or '-'}: {core._short(b['summary'], 70)} (since {b['ts'][:16]})")
+        print(_paint("BLOCKED ", "1;33") + f" {b['agent']:<12} {b['project'] or '-'}: {core._short(b['summary'], 70)} "
+              f"(since {_clock(b['ts'])})")
     if s["alerts_file"]:
-        print(f"alerts   see {s['alerts_file']}")
+        print(f"alerts   see {collab._tilde(s['alerts_file'])}")
     print("agents")
     for agent, e in sorted(s["agents"].items(), key=lambda kv: kv[1]["ts"] or "", reverse=True):
-        print(f"  {agent:<14} {e['ts']}  {e['project'] or '-'}: {core._short(e['summary'], 70)}")
+        print(f"  {agent:<14} {_clock(e['ts']):<11}  {e['project'] or '-'}: {core._short(e['summary'], 70)}")
+
+
+def _clock(ts: str | None) -> str:
+    """'2026-10-21T06:42:55+00:00' -> '10-21 06:42': enough for a human scanning a status page."""
+    return f"{ts[5:10]} {ts[11:16]}" if ts and len(ts) >= 16 else (ts or "-")
 
 
 def build_open_blocked(cfg: core.Config) -> list[dict]:
