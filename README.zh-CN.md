@@ -62,19 +62,19 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 ## 用法
 
 ```bash
-aisync demo                                   # 一个临时 hub，带两周的合成日志
-aisync init                                   # 创建 ~/.ai-sync（可用 AISYNC_HOME 改位置）
-aisync install-hooks                          # 先显示要改的每个工具配置的 diff，再问你
-aisync watch &                                # 事件驱动的同步循环（或手动跑 aisync sync）
+aisync demo            # 一个临时 hub，带两周的合成日志
+aisync init            # 创建 ~/.ai-sync（可用 AISYNC_HOME 改位置）
+aisync install-hooks   # 先用 diff 列出要改的每个工具配置，再问你
+aisync watch &         # 事件驱动的同步循环（或手动跑 aisync sync）
 ```
 
 agent 在一次会话里会这样用：
 
 ```bash
-aisync claim  -a codex -p checkout-api -f app/payments/ -m "SDK upgrade"   # 退出码 3 = 有人占着
-aisync log    -a codex -p checkout-api -k dev_log -m "SDK 5.0, retries kept" -f app/payments/provider.py
-aisync rule add -a codex "every API change ships with a contract test" --reason "two schema breaks"
-aisync release -a codex -p checkout-api
+aisync claim   -a codex -p api -f app/payments/ -m "升级 SDK"  # 3 = 有人占着
+aisync log     -a codex -p api -m "SDK 5.0，保留重试"
+aisync rule add -a codex "每个 API 改动都要带契约测试"
+aisync release -a codex -p api
 ```
 
 | 命令 | 作用 |
@@ -145,7 +145,7 @@ aisync 是独立项目，与上述项目没有隶属关系。
 ## 开发
 
 ```bash
-python3 -m unittest discover -s tests     # 包括 构建 wheel -> 全新 venv -> aisync demo + verify
+python3 -m unittest discover -s tests   # 含 wheel -> 全新 venv -> demo
 ```
 
 这些图片都是生成的：终端 GIF 录的是 [`.github/refine/demo-terminal.zh.json`](.github/refine/demo-terminal.zh.json)
