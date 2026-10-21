@@ -1,0 +1,59 @@
+<!doctype html>
+<!--
+What: the aisync home page (served at https://maxont.github.io/aisync/).
+Why: one page that says what aisync is and links to install and the source.
+How: GitHub Pages from /docs; plain HTML, no scripts, no network requests.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aisync: one standup for all your AI coding tools</title>
+<meta name="description" content="Shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor. Python stdlib only.">
+<style>
+:root{--bg:#fbf8f3;--card:#fff;--ink:#2a2522;--muted:#6d655f;--line:#e7dfd5;--soft:#f4eee5;--accent:#d6336c;--code:#1e1b19;--codeink:#f2ece4}
+@media (prefers-color-scheme:dark){:root{--bg:#161418;--card:#211e25;--ink:#eee9e4;--muted:#a69da0;--line:#38333d;--soft:#1c1a20;--accent:#f06595;--code:#0f0e11}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.7;font-size:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:40px 20px 80px}
+a{color:var(--accent)}
+h1{font-size:clamp(30px,6vw,48px);line-height:1.15;margin:0 0 10px}
+h2{margin:40px 0 10px;font-size:24px}
+.lead{color:var(--muted);font-size:19px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px}
+.card b{display:block;margin-bottom:4px}
+pre{background:var(--code);color:var(--codeink);padding:14px 16px;border-radius:12px;overflow:auto;font-size:14px;line-height:1.55}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em}
+p code{background:var(--soft);padding:1px 6px;border-radius:6px}
+nav a{margin-right:16px;font-size:14px;text-decoration:none}
+.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:10px 18px;border-radius:12px;font-weight:600;margin-right:10px}
+.muted{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav><a href="install/">Install</a><a href="https://github.com/MaxonT/aisync">GitHub</a></nav>
+<h1>aisync</h1>
+<p class="lead">One standup for all your AI coding tools. Claude Code, Codex and Cursor share one set of rules, one journal and one list of who is editing what, and hear what the others did while they work.</p>
+<p><a class="btn" href="install/">Install</a><a href="https://github.com/MaxonT/aisync">Source on GitHub</a></p>
+
+<div class="grid">
+<div class="card"><b>Shared rules</b>One rules file, copied into every tool's own rule file with a 3-way sync. Any agent can add a rule; conflicts are never overwritten.</div>
+<div class="card"><b>Hash-chained journal</b>Every decision, blocker and commit in one append-only log. <code>aisync verify</code> catches any hand edit.</div>
+<div class="card"><b>File claims</b>Agents claim files before editing. An overlapping claim exits with code 3, so the agent stops and coordinates.</div>
+<div class="card"><b>Mid-session news</b>Hooks tell a running Claude Code, Codex or Cursor session what the other tools just did. Silent when nothing changed.</div>
+</div>
+
+<h2>See it in ten seconds</h2>
+<pre>aisync demo     # a throwaway hub with a synthetic two-week journal: 5 tools, claims, a blocker, a rule conflict</pre>
+
+<h2>Install</h2>
+<p>Give this sentence to your AI agent:</p>
+<pre>Read https://maxont.github.io/aisync/install and install aisync for me.</pre>
+<p class="muted">Or in a terminal: <code>curl -fsSL https://maxont.github.io/aisync/install.sh | bash</code></p>
+
+<p class="muted" style="margin-top:40px">Python 3.11+, standard library only. MIT licensed.</p>
+</div>
+</body>
+</html>
