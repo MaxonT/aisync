@@ -22,7 +22,7 @@ class WheelTest(unittest.TestCase):
             if r is None or r.returncode != 0:
                 r = subprocess.run(wheel, capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, r.stderr[-2000:])
-            wheels = list((d / "dist").glob("aisync-0.1.1-*.whl"))
+            wheels = list((d / "dist").glob("aisync-0.1.2-*.whl"))
             self.assertEqual(len(wheels), 1, list((d / "dist").iterdir()))
             subprocess.run([sys.executable, "-m", "venv", d / "venv"], check=True)
             pip, exe = d / "venv/bin/pip", d / "venv/bin/aisync"
@@ -31,7 +31,7 @@ class WheelTest(unittest.TestCase):
                    "GIT_CONFIG_GLOBAL": str(d / "gitconfig"), "GIT_CONFIG_NOSYSTEM": "1"}
             run = lambda *a, **kw: subprocess.run([exe, *map(str, a)], env=env, capture_output=True, text=True, **kw)
 
-            self.assertEqual(run("--version").stdout.strip(), "aisync 0.1.1")
+            self.assertEqual(run("--version").stdout.strip(), "aisync 0.1.2")
             out = run("demo", "--dir", d / "demo")
             self.assertEqual(out.returncode, 0, out.stderr)
             self.assertIn("chain intact", out.stdout)

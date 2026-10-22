@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, board, collab, core, demo, hooks, ui, watch
+from . import __version__, board, collab, core, demo, hooks, star_prompt, ui, watch
 
 DEFAULT_TARGETS = [("claude-code", "~/.claude/CLAUDE.md"),
                    ("codex", "~/.codex/AGENTS.md")]
@@ -540,7 +540,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd is None:  # bare `aisync`: the front screen instead of a usage error
         parser.print_help()
         return 0
-    return args.fn(args)
+    code = args.fn(args)
+    if code == 0 and args.cmd != "hook":
+        star_prompt.maybe_ask("MaxonT/aisync", "aisync")
+    return code
 
 
 if __name__ == "__main__":
