@@ -25,6 +25,8 @@
 
 如果 aisync 让你的几个 agent 不再互相踩脚，点个 star 能让更多人找到它。
 
+<p align="center"><img src="docs/assets/cli.zh.png" alt="在终端里运行 aisync：渐变的 AISYNC 像素大字，下面按「开始、每次会话、查看、保持运行」分组列出所有命令" width="720"></p>
+
 ## 安装
 
 **交给你的 AI。** 它会读安装页，先 dry run，改任何东西之前都会先问你：
