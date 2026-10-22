@@ -26,6 +26,8 @@
 
 If aisync keeps your agents from stepping on each other, a star helps other people find it.
 
+<p align="center"><img src="docs/assets/cli.png" alt="Running aisync in a terminal: a gradient AISYNC pixel logo, then every command grouped as start, every session, look around, keep it running" width="720"></p>
+
 ## Install
 
 **Give it to your AI.** It reads the page, does a dry run first and asks before it changes anything:
