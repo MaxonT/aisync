@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, board, collab, core, demo, hooks, watch
+from . import __version__, board, collab, core, demo, hooks, ui, watch
 
 DEFAULT_TARGETS = [("claude-code", "~/.claude/CLAUDE.md"),
                    ("codex", "~/.codex/AGENTS.md")]
@@ -371,6 +371,7 @@ def cmd_demo(a) -> int:
         print(f"error: {ex}", file=sys.stderr)
         return 2
     cfg = core.load_config(root)
+    print(ui.banner(ui.style_for(sys.stdout), __version__) + "\n")
     print(f"demo hub with a synthetic two-week journal: {root}\n")
     print_status(core.status(cfg), cfg)
     print(f"\nexplore it (your real hub is untouched):\n  export AISYNC_HOME={root}\n"
@@ -412,10 +413,21 @@ def cmd_resume(a) -> int:
     return 0
 
 
+class _Root(argparse.ArgumentParser):
+    """The top-level parser: its --help is the logo screen, not argparse's default."""
+
+    def format_help(self):
+        commands = {}
+        for action in self._actions:
+            if isinstance(action, argparse._SubParsersAction):
+                commands = {a.dest: a.help or "" for a in action._choices_actions}
+        return ui.help_screen(ui.style_for(sys.stdout), __version__, commands) + "\n"
+
+
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="aisync", description="One standup for all your AI coding tools.")
+    p = _Root(prog="aisync", description="One standup for all your AI coding tools.")
     p.add_argument("--version", action="version", version=f"aisync {__version__}")
-    sub = p.add_subparsers(dest="cmd", required=True)
+    sub = p.add_subparsers(dest="cmd", parser_class=argparse.ArgumentParser)
 
     s = sub.add_parser("init", help="create the hub (default ~/.ai-sync, override with AISYNC_HOME)")
     s.add_argument("--seed-from", help="file whose owner-preferences block becomes the shared rules (default: a starter block)")
@@ -523,7 +535,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.cmd is None:  # bare `aisync`: the front screen instead of a usage error
+        parser.print_help()
+        return 0
     return args.fn(args)
 
 
