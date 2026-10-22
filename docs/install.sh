@@ -13,7 +13,7 @@
 # It never edits shell config, never uses sudo, and never reads any of your files.
 set -euo pipefail
 
-VERSION="0.1.1"
+VERSION="0.1.2"
 REPO="https://github.com/MaxonT/aisync"
 SPEC="${REPO}/releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl"
 VENV="${HOME}/.local/share/aisync/venv"

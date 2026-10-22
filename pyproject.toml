@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aisync"
-version = "0.1.1"
+version = "0.1.2"
 description = "One standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor."
 readme = "README.md"
 license = { text = "MIT" }
