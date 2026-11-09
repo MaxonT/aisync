@@ -78,7 +78,7 @@ agent 在一次会话里会这样用：
 ```bash
 aisync claim   -a codex -p api -f app/payments/ -m "升级 SDK"  # 3 = 有人占着
 aisync log     -a codex -p api -m "SDK 5.0，保留重试"
-aisync rule add -a codex --when "改 API" --do "带一个契约测试" --not "没有测试就合并"
+aisync rule add -a codex --when "改 API" --do "带一个契约测试"
 aisync release -a codex -p api
 ```
 
