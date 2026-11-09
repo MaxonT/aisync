@@ -110,11 +110,18 @@ def history_items(root: Path, everything: bool = False):
     tag = subprocess.run(["git", "-C", str(root), "describe", "--tags", "--abbrev=0"],
                          capture_output=True, text=True).stdout.strip()
     rng = ["--all"] if everything or not tag else [f"{tag}..HEAD"]
-    log = subprocess.run(["git", "-C", str(root), "log", *rng, "--no-merges", "--format=%x00%H%n%an <%ae>%n%cn <%ce>%n%B"],
+    log = subprocess.run(["git", "-C", str(root), "log", *rng, "--no-merges",
+                          "--format=%x00%H%x01%an%x01%ae%x01%cn%x01%ce%n%B"],
                          capture_output=True, text=True, check=True).stdout
     for entry in filter(str.strip, log.split("\0")):
-        sha = entry.split("\n", 1)[0]
-        yield f"commit {sha[:8]}", entry
+        head, _, body = entry.partition("\n")
+        sha, an, ae, cn, ce = head.split("\x01")
+        people = [f"{an} <{ae}>"]
+        # A hosted rebase merge keeps the author and rewrites the committer name to the account's display
+        # name (same address, different name). That name comes from the host, not from what we push.
+        if not (ce == ae and cn != an):
+            people.append(f"{cn} <{ce}>")
+        yield f"commit {sha[:8]}", "\n".join(people) + "\n" + body
 
 
 def main(argv=None) -> int:

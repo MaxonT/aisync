@@ -246,6 +246,24 @@ class PrivacyTests(unittest.TestCase):
         self.assertTrue(self.ps.scan_text("mail me: a.b@" + "uni.edu"))
         self.assertFalse(self.ps.scan_text("Co-authored-by: X <1+X@users.noreply.github.com>; ai-sync hub; noreply@anthropic.com"))
 
+    def test_history_skips_a_host_rewritten_committer_but_not_an_author(self):
+        import subprocess, tempfile
+        name = "Ti" + "ger"                                   # a guarded word, split so this file stays clean
+        with tempfile.TemporaryDirectory() as d:
+            env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+            git = lambda *a, **e: subprocess.run(["git", "-C", d, *a], check=True, capture_output=True,
+                                                 env={**env, **e})
+            git("init", "-q")
+            git("commit", "-q", "--allow-empty", "-m", "base", GIT_AUTHOR_NAME="a", GIT_AUTHOR_EMAIL="a@example.com",
+                GIT_COMMITTER_NAME="a", GIT_COMMITTER_EMAIL="a@example.com")
+            git("tag", "v0")
+            git("commit", "-q", "--allow-empty", "-m", "rebased on the host", GIT_AUTHOR_NAME="a",
+                GIT_AUTHOR_EMAIL="a@example.com", GIT_COMMITTER_NAME=name, GIT_COMMITTER_EMAIL="a@example.com")
+            self.assertEqual(self.ps.scan_files(self.ps.history_items(Path(d))), [])
+            git("commit", "-q", "--allow-empty", "-m", "local", GIT_AUTHOR_NAME=name, GIT_AUTHOR_EMAIL="a@example.com",
+                GIT_COMMITTER_NAME=name, GIT_COMMITTER_EMAIL="a@example.com")
+            self.assertTrue(self.ps.scan_files(self.ps.history_items(Path(d))))
+
     def test_no_private_strings_in_tree(self):
         self.assertEqual(self.ps.scan_files(self.ps.tree_items(ROOT)), [])
 
