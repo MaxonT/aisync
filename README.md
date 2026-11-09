@@ -79,7 +79,7 @@ What an agent does during a session:
 ```bash
 aisync claim   -a codex -p api -f app/payments/ -m "SDK upgrade"  # 3 = taken
 aisync log     -a codex -p api -m "SDK 5.0, retries kept"
-aisync rule add -a codex --when "changing an API" --do "ship a contract test" --not "merge without one"
+aisync rule add -a codex --when "changing an API" --do "add a contract test"
 aisync release -a codex -p api
 ```
 
