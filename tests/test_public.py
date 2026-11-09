@@ -186,11 +186,12 @@ class InstallHooksCliTests(Base):
 class ReleaseTests(unittest.TestCase):
     def test_version_and_console_script(self):
         meta = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
-        self.assertEqual(meta["version"], "0.1.2")
+        self.assertEqual(meta["version"], "0.2.0")
         self.assertEqual(ai_sync.__version__, meta["version"])
         self.assertEqual(meta["name"], "aisync")
         self.assertEqual(meta["scripts"], {"aisync": "ai_sync.cli:main"})
         self.assertEqual(meta["dependencies"], [])
+        self.assertEqual(meta["optional-dependencies"], {"mcp": ["mcp>=2.3,<3"]})
 
     def test_every_command_has_a_cli_test(self):
         commands = cli.build_parser()._subparsers._group_actions[0].choices
@@ -204,55 +205,49 @@ class ReleaseTests(unittest.TestCase):
         import sys
         for path in (ROOT / "ai_sync").glob("*.py"):
             for mod in re.findall(r"^\s*(?:from|import) ([a-zA-Z_]\w*)", path.read_text(), re.M):
-                self.assertTrue(mod in sys.stdlib_module_names or mod == "__future__", f"{path.name}: {mod}")
+                optional = path.name == "mcp_server.py" and mod == "mcp"     # the `aisync[mcp]` extra, imported lazily
+                self.assertTrue(mod in sys.stdlib_module_names or mod == "__future__" or optional, f"{path.name}: {mod}")
+
+    def test_mcp_without_the_sdk_says_how_to_install_it(self):
+        with mock.patch.dict("sys.modules", {"mcp": None, "mcp.server": None, "mcp.server.mcpserver": None}):
+            code, out = run_cli("mcp")
+        self.assertEqual(code, 2)
+        self.assertIn("pip install 'aisync[mcp]'", out)
+
+
+class RulecheckCliTests(Base):
+    def test_rulecheck_passes_when_every_fact_survives(self):
+        before = self.t / "before.md"
+        after = self.t / "after.md"
+        block = "<!-- owner-preferences:start -->\n- [R-001] run the suite in 120 s (2026-11-01 · a)\n<!-- owner-preferences:end -->\n"
+        before.write_text(block)
+        after.write_text(block)
+        archive = self.t / "rules-archive.md"
+        archive.write_text("- [R-000] run the suite in 300 s (2026-10-01 · a) 被 R-001「run the suite」取代（2026-11-01）\n")
+        code, out = run_cli("rulecheck", str(before), str(after), "--archive", str(archive))
+        self.assertEqual(code, 0, out)
+        self.assertIn("0 missing facts", out)
 
 
 class PrivacyTests(unittest.TestCase):
     """The repo is public: no personal paths, names, emails or private repo names anywhere.
-    The private words are kept as SHA-256 prefixes, so this test does not publish what it guards."""
-    PRIVATE = {
-        "8bb367a8f3ba87581929", "e63b9641f880cc3335b9", "f15c16b99f82d8201767", "35b70246a19cb878499f",
-        "7b9dd7061d0e07a296d2", "b6463d839a2dd880fbf0", "ce62d6913dfc9149ab9b", "b7b5122e0216692a394b",
-        "9aebd569f8d256fe366f", "7d941509db4cf57a351b", "1cb8cc6d49bb9a9982fa", "92f9ed99b93513392b02",
-        "70f693250fd960f8a205", "d0a6da933dd33d8e975d",
-    }
-    PATTERN = re.compile(r"/Users/\w")
-    EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
-    PUBLIC_EMAIL = re.compile(r"noreply@|@users\.noreply\.github\.com$|@example\.(com|org)$")
+    One scanner for the tests, the release check and the port: tools/privacy_scan.py (hashed word list)."""
 
-    @staticmethod
-    def words(line: str):
-        """Every word, and every run of a hyphenated word's parts, with and without hyphens."""
-        import hashlib
-        for tok in re.findall(r"[a-z0-9]+(?:-[a-z0-9]+)*", line.lower()):
-            parts = tok.split("-")
-            for i in range(len(parts)):
-                for j in range(i + 1, len(parts) + 1):
-                    for w in {"-".join(parts[i:j]), "".join(parts[i:j])}:
-                        yield w, hashlib.sha256(w.encode()).hexdigest()[:20]
-
-    def scan(self, text: str) -> list[str]:
-        found = [w for line in text.splitlines() for w, digest in self.words(line) if digest in self.PRIVATE]
-        found += self.PATTERN.findall(text)
-        found += [m for m in self.EMAIL.findall(text) if not self.PUBLIC_EMAIL.search(m)]
-        return found
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("privacy_scan", ROOT / "tools" / "privacy_scan.py")
+        cls.ps = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.ps)
 
     def test_the_scanner_catches_what_it_guards(self):
-        self.assertTrue(self.scan("see ~/" + "projects/awesome-" + "list-factory/x"))
-        self.assertTrue(self.scan("cd /Users/" + "someone/projects"))
-        self.assertTrue(self.scan("mail me: a.b@" + "uni.edu"))
-        self.assertFalse(self.scan("Co-authored-by: X <1+X@users.noreply.github.com>; ai-sync hub; noreply@anthropic.com"))
+        self.assertTrue(self.ps.scan_text("see ~/" + "projects/awesome-" + "list-factory/x"))
+        self.assertTrue(self.ps.scan_text("cd /Users/" + "someone/projects"))
+        self.assertTrue(self.ps.scan_text("mail me: a.b@" + "uni.edu"))
+        self.assertFalse(self.ps.scan_text("Co-authored-by: X <1+X@users.noreply.github.com>; ai-sync hub; noreply@anthropic.com"))
 
     def test_no_private_strings_in_tree(self):
-        hits = []
-        for path in ROOT.rglob("*"):
-            if not path.is_file() or {".git", "__pycache__", "build", "dist"} & set(path.parts) \
-                    or path.suffix in (".pyc", ".gif", ".png"):
-                continue
-            for i, line in enumerate(path.read_text(errors="ignore").splitlines(), 1):
-                if self.scan(line):
-                    hits.append(f"{path.relative_to(ROOT)}:{i}")
-        self.assertEqual(hits, [])
+        self.assertEqual(self.ps.scan_files(self.ps.tree_items(ROOT)), [])
 
 
 if __name__ == "__main__":

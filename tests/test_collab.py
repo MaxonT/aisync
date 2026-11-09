@@ -10,7 +10,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from ai_sync import cli, collab, core
+from ai_sync import cli, collab, core, ruleids
 
 from test_ai_sync import Base, _git
 
@@ -70,16 +70,16 @@ class RuleTests(CollabBase):
         self.assertIn("rule_change", kinds)
 
     def test_rule_add_dedupes_and_validates(self):
-        self.run_cli("rule", "add", "-a", "cursor", "always write tests first")
-        code, out = self.run_cli("rule", "add", "-a", "codex", "Always write tests first!")
+        self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "cursor", "always write tests first")
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "codex", "Always write tests first!")
         self.assertEqual(code, 0)
         self.assertIn("already exists", out)
         self.assertEqual(sum("tests first" in l for l in collab.rule_list(self.cfg)), 1)
-        self.assertEqual(self.run_cli("rule", "add", "always do things")[0], 2)    # no agent
-        self.assertEqual(self.run_cli("rule", "add", "-a", "x", "short")[0], 2)
+        self.assertEqual(self.run_cli("rule", "add", "--judgment-only", "test rule", "always do things")[0], 2)    # no agent
+        self.assertEqual(self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "short")[0], 2)
 
     def test_rule_list(self):
-        self.run_cli("rule", "add", "-a", "cursor", "never commit generated files")
+        self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "cursor", "never commit generated files")
         code, out = self.run_cli("rule", "list")
         self.assertEqual(code, 0)
         self.assertIn("rule A", out)
@@ -182,9 +182,105 @@ class ProgressAndReportTests(CollabBase):
 
     def test_cycle_has_all_steps(self):
         rec = core.run_cycle(self.cfg, "test")
-        self.assertEqual(list(rec["steps"]), ["harvest", "rules", "distribute", "render", "progress", "flush"])
+        self.assertEqual(list(rec["steps"]), ["harvest", "rules", "ids", "distribute", "render", "progress", "tidy", "flush"])
         self.assertTrue(rec["ok"], rec)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TopicRuleTests(CollabBase):
+    """once rules are grouped by topic, rule add follows the writing standard."""
+
+    def _grouped(self):
+        p = self.home / "preferences.md"
+        text = p.read_text()
+        blk = core.extract_block(text)
+        head = blk.splitlines()[0]
+        new = "\n".join([head, "## Owner preferences", "### 协作与派单", "- old rule about letters uses inbox (2026-10-18 · x)",
+                         "### 定时任务", "- jobs answer four questions (2026-10-14 · y)", core.BLOCK_END])
+        p.write_text(core.replace_block(text, new))
+
+    def test_topic_required_and_placed_newest_first(self):
+        self._grouped()
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "codex", "always check duplicates before sending a task")
+        self.assertEqual(code, 2)
+        self.assertIn("协作与派单", out)                       # tells which topics exist
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "codex", "-p", "team-inbox", "-t", "协作",
+                                 "always check duplicates before sending a task", "-r", "owner said")
+        self.assertEqual(code, 0, out)
+        blk = core.extract_block((self.home / "preferences.md").read_text()).splitlines()
+        i = blk.index("### 协作与派单")
+        self.assertRegex(blk[i + 1], r"^- \[R-\d{3}\] always check duplicates before sending a task \(")
+        self.assertIn("· codex, team-inbox)", blk[i + 1])
+        self.assertNotIn("Reason", "\n".join(blk))              # the why goes to the journal
+        self.assertIn("owner said", core.read_events(self.cfg)[-1]["summary"])
+
+    def test_replaces_moves_old_rule_and_limits_sentences(self):
+        self._grouped()
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "协作", "One. Two. Three. Four.")
+        self.assertEqual(code, 2)
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "协作", "--replaces", "letters uses inbox",
+                                 "letters live on the mailbox branch only")
+        self.assertEqual(code, 0, out)
+        blk = core.extract_block((self.home / "preferences.md").read_text())
+        self.assertNotIn("已取代", blk)                                  # history is no longer in the block
+        self.assertNotIn("letters uses inbox", blk)
+        sup = (self.home / "rules-archive.md").read_text()
+        self.assertIn("letters uses inbox", sup)
+        new_id = ruleids.bullet_id(next(l for l in blk.splitlines() if "mailbox branch only" in l))
+        self.assertIn(f"被 {new_id}「letters live on the mailbox br」取代", sup)
+        self.assertIn(f"replaced_by: {new_id}", sup)
+        from ai_sync import rulecheck
+        self.assertEqual(rulecheck.check(blk, blk, sup), [])
+
+
+class RuleDedupTests(TopicRuleTests):
+    """--replaces was refused as 'an equal rule already exists'."""
+
+    OLD = ("The goal of every learning pack is that Alex can explain the thing clearly to other people, "
+           "so each pack lists every point in one line (2026-10-26 · claude-code, team-handbook)")
+    NEW = ("The goal of every learning pack is that Alex can explain the thing clearly in technical "
+           "communication, so each pack lists every point in one line and ends with a jargon table")
+
+    def _with_old(self):
+        self._grouped()
+        p = self.home / "preferences.md"
+        p.write_text(p.read_text().replace("### 定时任务", "- " + self.OLD + "\n### 定时任务"))
+
+    def test_replace_keeps_same_opening_words(self):
+        self._with_old()
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "协作", "--replaces", "explain the thing clearly to other people",
+                                 self.NEW)
+        self.assertEqual(code, 0, out)
+        self.assertRegex(out, r"rule R-\d{3} added")
+        cur = core.extract_block((self.home / "preferences.md").read_text())
+        sup = (self.home / "rules-archive.md").read_text()
+        self.assertIn("in technical communication", cur)
+        self.assertNotIn("to other people", cur)
+        self.assertIn("to other people", sup)
+
+    def test_superseded_line_does_not_block_a_new_rule(self):
+        self._with_old()
+        self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "协作", "--replaces", "explain the thing clearly to other people", self.NEW)
+        # a later revision whose opening words match only lines already in 已取代 and the one it replaces
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "协作", "--replaces", "in technical communication",
+                                 self.NEW.replace("jargon table", "jargon table and two questions"))
+        self.assertEqual(code, 0, out)
+        self.assertRegex(out, r"rule R-\d{3} added")
+
+    def test_true_duplicate_still_refused(self):
+        self._with_old()
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "定时", self.OLD.split(" (2026")[0])
+        self.assertIn("an equal rule already exists", out)
+        code, out = self.run_cli("rule", "add", "--judgment-only", "test rule", "-a", "x", "-t", "定时", "--replaces", "jobs answer four questions",
+                                 self.OLD.split(" (2026")[0])
+        self.assertIn("an equal rule already exists", out)   # equals a different current rule
+
+
+def test_sentence_count_ignores_dots_in_names_and_semicolons():
+    from ai_sync.collab import _sentences
+    assert _sentences("Keys are in ~/.config/awesome-factory/x.env and jobs/x_autopilot.py reads them; verified 2026-10-27.") == 1
+    assert _sentences("One. Two! Three? Four.") == 4
+    assert _sentences("第一句。第二句！第三句") == 3

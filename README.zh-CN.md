@@ -26,7 +26,7 @@
 
 如果 aisync 让你的几个 agent 不再互相踩脚，点个 star 能让更多人找到它。
 
-<p align="center"><img src="docs/assets/cli.zh.png" alt="在终端里运行 aisync：渐变的 AISYNC 像素大字，下面按「开始、每次会话、查看、保持运行」分组列出所有命令" width="720"></p>
+<p align="center"><img src="docs/assets/cli.zh.png" alt="在终端里运行 aisync：渐变的 AISYNC 像素大字，下面按「开始、每次会话、查看、精简规则、保持运行」分组列出所有命令" width="720"></p>
 
 ## 安装
 
@@ -62,7 +62,7 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 规则同步 aisync 也做：一份规则块复制进每个工具自己的规则文件，三方同步，有冲突绝不覆盖。
 
-**自己先用过：** 5 个 AI 工具、9 天、1,600+ 条日志事件。
+**自己先用过：** 7 个 AI 工具、4 周、6,700+ 条日志事件。
 
 ## 用法
 
@@ -78,7 +78,7 @@ agent 在一次会话里会这样用：
 ```bash
 aisync claim   -a codex -p api -f app/payments/ -m "升级 SDK"  # 3 = 有人占着
 aisync log     -a codex -p api -m "SDK 5.0，保留重试"
-aisync rule add -a codex "每个 API 改动都要带契约测试"
+aisync rule add -a codex --when "改 API" --do "带一个契约测试" --not "没有测试就合并"
 aisync release -a codex -p api
 ```
 
@@ -86,7 +86,12 @@ aisync release -a codex -p api
 |---|---|
 | `init` | 创建 hub：共享规则、日志、配置、本地 git 仓库 |
 | `log` | 追加一条事件（`dev_log`、`decision`、`blocked`、`unblocked`、`rule_change`、`note`） |
-| `rule add` / `rule list` | 任何 agent 都能加一条共享规则，下次同步时每个工具的副本都会拿到 |
+| `rule add` / `rule list` | 任何 agent 都能加一条共享规则（`--when/--do/--not`、`--topic`、`--replaces R-012`），下次同步时每个工具的副本都会拿到 |
+| `rule lint` / `rule rewrite` / `rule enforcement` | 列出不符合 When/Do/Not 格式的规则 / 按编号改写且不丢任何事实 / 每条规则由哪个测试或 hook 守着 |
+| `tidy` | 规则文员：疑似重复、最近没人引用的规则、核心层超预算；只提建议，由你勾选 |
+| `rulecheck` | 证明一次规则整理没丢掉硬事实（路径、数字、命令、编号） |
+| `instinct` | 可选的习惯清单，从过去的错误里长出来，每次会话开头注入 |
+| `mcp` | 通过 stdio 把 hub 提供给任何 MCP agent（`pip install 'aisync[mcp]'`） |
 | `claim` / `release` / `claims` | 此刻谁在改哪些文件；撞车 = 退出码 3 |
 | `news` | 这个会话上次看过之后，别的工具做了什么 |
 | `hook <tool>` | Claude Code、Codex、Cursor 的 hook 入口（读 hook JSON，永不报错退出） |
@@ -99,6 +104,24 @@ aisync release -a codex -p api
 | `sync` / `watch` | 跑一次同步 / 防抖的事件驱动循环 |
 | `resolve` / `resume` | 裁决规则冲突 / 暂停后清零失败计数 |
 | `demo` | 上面那个临时 hub |
+
+## 0.2.0 新增：规则写成接口，分层加载
+
+规则文件会一直变长，直到每个会话都要为它付 token，却没人真读。0.2.0 把一条规则当成一个 API：
+
+- **When / Do / Not。** 每条规则一行，带稳定编号：`[R-087] When: <触发>. Do: <动作>. Not: <禁止>.`
+  原因写进日志，不写进规则。`rule_spec = true` 时别的写法一律拒收；`rule lint` 列出不合格的；
+  `rule rewrite` 按编号改写旧规则，改写丢了路径、数字或命令就拒绝。
+- **分层。** 把某个工具副本标成 `layer = "core"`：`core_topics` 全文保留，其余每个主题折成一行。
+  提示词或工具调用碰到某个主题的关键词（`[shelf]`）时，hook 在本会话里把这个主题注入一次。
+  在作者自己的 hub 上，常驻规则从 20,673 降到 7,876 tokens；回放 7 天的会话记录，被折叠的规则
+  被真正引用的 189 次里，有 98.9% 在引用之前已经注入。
+- **稳定前缀。** `progress_file` 把实时进度表移出共享页面，页面保持逐字节不变，提示缓存一直命中：
+  日志有新事件后的下一个会话，缓存读取从 13,060 变成 61,151 tokens。
+- **文员，不是清洁工。** `aisync tidy` 只提建议（重复、没人引用、超预算），从不改动；被取代的规则
+  带着编号移进 `rules-archive.md`，什么都不删。
+- **任何 agent。** 三扇门：AGENTS.md 页面、CLI、`aisync mcp`（工具：rules、rule_add、log、claim、
+  release、news、status、tidy）。核心仍然只用标准库；MCP SDK 是可选的 `aisync[mcp]`。
 
 ## 工作原理
 
@@ -125,9 +148,21 @@ scan_dirs = ["~/projects"]                    # 里面的每个 git 仓库都会
 rule_sources = []                             # 这些仓库 AGENTS.md 里的 "## Meta rule" 会变成共享规则
 remote = ""                                   # 例如 "origin"，同时推送 hub
 
+progress_file = "progress.md"                 # agents.md 保持不变；进度在会话开始时由 hook 注入
+rule_spec = true                              # rule add 只收 When/Do/Not 格式
+require_enforcer = false                      # true：每条新规则都要写 --enforced-by 或 --judgment-only
+core_topics = ["Safety", "Meta"]              # 分层副本里全文保留的主题标题
+instincts_path = ""                           # 可选的习惯文件，会话开始时注入
+tidy_daily = false                            # watcher 每天启动一次 `aisync tidy --write`
+tidy_usage_globs = []                         # 这些文件里出现 R-### 就算这条规则被用过
+
+[shelf]                                       # 折叠的主题 -> 把它拉进会话的关键词
+Deploys = ["deploy", "terraform", "rollback"]
+
 [[target]]                                    # 带共享规则块的文件
 label = "claude-code"
 path = "~/.claude/CLAUDE.md"
+layer = "core"                                # 可选：非核心主题折叠，按需注入
 ```
 
 想让 `aisync watch` 一直运行，可以放进登录项、systemd 用户单元或 launchd agent；创建

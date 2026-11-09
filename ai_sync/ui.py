@@ -131,9 +131,10 @@ GROUPS = (
     ("start", ("init", "install-hooks", "demo")),
     ("every session", ("news", "claim", "release", "log", "rule")),
     ("look around", ("status", "claims", "tail", "report", "board", "verify")),
-    ("keep it running", ("sync", "watch", "resolve", "resume", "hook")),
+    ("keep the rules lean", ("tidy", "rulecheck", "instinct")),
+    ("keep it running", ("sync", "watch", "resolve", "resume", "hook", "mcp")),
 )
-GROUP_COLORS = (PINK, VIOLET, CYAN, GREEN, AMBER)
+GROUP_COLORS = (PINK, VIOLET, CYAN, AMBER, GREEN, AMBER)
 
 
 def help_screen(style: Style, version: str, commands: dict[str, str]) -> str:

@@ -29,10 +29,16 @@ Everything lives in `{hub}/`, a local git repo: each change is a commit, so noth
 ## Protocol (every agent, every tool)
 1. **Start of a session**: read this page (who is doing what). More: `aisync tail -n 30`.
    **Mid-session**: Claude Code, Codex and Cursor get what other tools did injected by hooks (`aisync hook`).
-   Other tools: run `aisync news --agent <tool>` before each new unit of work.
+   Other tools: run `aisync news --agent <tool>` before each new unit of work. Commits get `Agent: <tool>`
+   added by the global git hook when it can tell which tool you are; still write it yourself.
 2. **The human states a rule for all projects** ("from now on we always ..."): record it at once:
-   `aisync rule add --agent <tool> --project <repo> "the rule, one sentence" --reason "why"`
+   `aisync rule add --agent <tool> --project <repo> --when "<trigger>" --do "<action>" [--not "<forbidden>"] --reason "why"`
    It goes into the shared rules and every tool picks it up; you do not need to tell the other tools.
+   Search first (`aisync rule list`); if a rule already covers it, replace it with `--replaces R-087` (its ID or a piece
+   of its text) instead of adding a second one; the old one moves to `rules-archive.md`. Every rule keeps a stable
+   ID like `[R-087]`. Say what enforces it: `--enforced-by <test or hook path>` or `--judgment-only "<why>"`.
+   A rule is an interface, not an essay: `When: <trigger>. Do: <action>. Not: <forbidden>.`; the why goes in
+   `--reason` (journal only). With `rule_spec = true` any other shape is refused; `aisync rule lint` lists misfits.
 3. **Before editing a repo** that other agents may be working in: `aisync claim --agent <tool> --project <repo>
    --files a.py,docs/ -m "what you are doing"` (exit 3 = someone else holds those files: coordinate or pick
    other work). `aisync release --agent <tool> --project <repo>` when done (claims expire after 2 h anyway).
@@ -150,20 +156,77 @@ def cmd_log(a) -> int:
 def cmd_rule(a) -> int:
     cfg = core.load_config()
     if a.action == "list":
-        for line in collab.rule_list(cfg):
+        if getattr(a, "topic", None) and not a.archived:
+            from . import layers
+            truth = core.extract_block((cfg.root / "preferences.md").read_text()) or ""
+            lines = layers.topic_rules(truth, a.topic)
+            for line in lines:
+                print(line)
+            return 0 if lines else 1
+        for line in collab.rule_list(cfg, archived=a.archived):
             print(line)
         return 0
+    if a.action == "enforcement":
+        from . import enforcement
+        rep = enforcement.report(cfg)
+        if a.json:
+            print(json.dumps(rep, ensure_ascii=False))
+        else:
+            print(f"rules {rep['total']}: enforced {rep['enforced']}, judgment_only {rep['judgment_only']}, "
+                  f"none {rep['none']}")
+            print("meta  " + ", ".join(f"{k} {v}" for k, v in rep["meta"].items()))
+            for rid in rep["meta_none"]:
+                print(f"META NONE {rid}: say what enforces it in {enforcement.path(cfg)}")
+            for m in rep["missing_paths"]:
+                print(f"MISSING {m['id']}: {m['path']}")
+        return 0 if rep["ok"] else 1
+    if a.action == "lint":
+        from . import rulespec
+        rep = rulespec.lint(collab.rule_list(cfg))
+        if a.json:
+            print(json.dumps(rep, ensure_ascii=False))
+        else:
+            print(f"rules {rep['rules']}: interface shape {rep['fit']}, not yet {len(rep['bad'])}")
+            for b in rep["bad"]:
+                print(f"  {b['id'] or '(no id)'}: {'; '.join(b['problems'])}")
+        return 0 if rep["rules"] and not rep["bad"] else 1
+    if a.action == "rewrite":
+        from . import rulespec
+        if not a.file:
+            print("error: rule rewrite --file <json {\"R-333\": \"When: ... Do: ...\"}>", file=sys.stderr)
+            return 2
+        rep = rulespec.rewrite(cfg, json.loads(Path(a.file).read_text()),
+                               agent=a.agent or os.environ.get("AISYNC_AGENT", "") or "unknown")
+        for rid, p in rep["problems"].items():
+            print(f"REFUSED {rid}: {'; '.join(p)}")
+        for m in rep["missing"]:
+            print(f"LOST FACT {m['fact']!r} from: {m['rule']}")
+        for rid, d in rep.get("dropped", {}).items():
+            print(f"dropped from {rid}: " + "; ".join(f"{k} ({r})" for k, r in d.items()))
+        print(f"rewritten {len(rep['rewritten'])}: {', '.join(rep['rewritten'])}")
+        return 0 if not rep["problems"] and not rep["missing"] else 1
+    if getattr(a, "when", None) or getattr(a, "do", None):
+        from . import rulespec
+        try:
+            a.text = [rulespec.compose(a.when or "", a.do or "", a.not_ or "")]
+        except ValueError as ex:
+            print(f"error: {ex}", file=sys.stderr)
+            return 2
     if not a.text:
         print("error: give the rule text, e.g. aisync rule add --agent trae \"always ...\"", file=sys.stderr)
         return 2
     try:
         rep = collab.rule_add(cfg, agent=a.agent or os.environ.get("AISYNC_AGENT", ""), text=" ".join(a.text),
-                              reason=a.reason or "", project=a.project or "")
+                              reason=a.reason or "", project=a.project or "",
+                              topic=a.topic or "", replaces=a.replaces or "",
+                              enforced_by=a.enforced_by or "", judgment_only=a.judgment_only or "")
     except ValueError as ex:
         print(f"error: {ex}", file=sys.stderr)
         return 2
     if rep["added"]:
-        print(f"rule added; every tool gets it on the next sync (about 30 s):\n{rep['rule']}")
+        print(f"rule {rep.get('id')} added; every tool gets it on the next sync (about 30 s):\n{rep['rule']}")
+        if rep.get("moved"):
+            print(f"moved to rules-archive.md:\n{rep['moved']}")
     else:
         print("an equal rule already exists; nothing changed")
     return 0
@@ -177,6 +240,29 @@ def _paint(text: str, code: str, stream=None) -> str:
 
 def _file_list(files) -> str:
     return f"[{', '.join(files)}]" if files else "[whole repo]"
+
+
+def cmd_instinct(a) -> int:
+    from . import instincts
+    cfg = core.load_config()
+    if a.action == "list":
+        text, lines, err = instincts.read(cfg)
+        if err:
+            print(f"error: instincts file unreadable: {err}", file=sys.stderr)
+            return 1
+        print("\n".join(lines))
+        return 0
+    if not a.text or not a.eb:
+        print("error: aisync instinct add \"one sentence\" --from EB-xxx --agent <tool>", file=sys.stderr)
+        return 2
+    try:
+        rep = instincts.add(cfg, agent=a.agent or os.environ.get("AISYNC_AGENT", ""), text=" ".join(a.text), eb=a.eb)
+    except ValueError as ex:
+        print(f"error: {ex}", file=sys.stderr)
+        return 2
+    print(f"added: {rep['line']}\nfile: {rep['path']} (journal {rep['event']})\n"
+          "the file is only written, not committed: commit it yourself")
+    return 0
 
 
 def cmd_claim(a) -> int:
@@ -391,6 +477,36 @@ def cmd_board(a) -> int:
     return 0
 
 
+def cmd_mcp(a) -> int:
+    from . import mcp_server
+    return mcp_server.main()
+
+
+def cmd_tidy(a) -> int:
+    from . import tidy
+    cfg = core.load_config()
+    rep = tidy.report(cfg)
+    day = f"{__import__('datetime').datetime.now().astimezone():%Y-%m-%d}"
+    if a.json:
+        print(json.dumps(rep, ensure_ascii=False))
+    else:
+        text = tidy.render(rep, day)
+        if a.write:
+            p = cfg.root / "tidy" / f"{day}.md"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            core.atomic_write(p, text)
+            print(f"written {p}")
+        else:
+            print(text, end="")
+    return 0 if rep["rules"] else 1
+
+
+def cmd_rulecheck(args) -> int:
+    from . import rulecheck
+    after = args.after or str(Path(os.environ.get("AISYNC_HOME", "~/.ai-sync")).expanduser() / "preferences.md")
+    return rulecheck.run(args.before, after, args.archive, args.accept_drop)
+
+
 def cmd_verify(a) -> int:
     problems = core.verify_chain(core.load_config())
     print("journal chain intact" if not problems else "\n".join(problems))
@@ -446,17 +562,31 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--ref", action="append", help="key=value, e.g. pr=45 (repeatable)")
     s.set_defaults(fn=cmd_log)
 
-    s = sub.add_parser("rule", help="shared rules: `rule add \"...\"` (any agent, applies to all) or `rule list`")
-    # real subcommands, so the rule text may come after the flags on Python 3.11 too
-    rsub = s.add_subparsers(dest="action", required=True)
-    r = rsub.add_parser("add", help="add a shared rule every tool follows")
-    r.add_argument("text", nargs="*")
-    r.add_argument("--agent", "-a")
-    r.add_argument("--project", "-p")
-    r.add_argument("--reason", "-r")
-    r.set_defaults(fn=cmd_rule)
-    r = rsub.add_parser("list", help="print the shared rules")
-    r.set_defaults(fn=cmd_rule)
+    s = sub.add_parser("rule", help="shared rules: `rule add --when .. --do .. [--not ..]` (any agent, applies to all), `rule list`, `rule lint`")
+    s.add_argument("action", choices=("add", "list", "enforcement", "lint", "rewrite"))
+    s.add_argument("--file", help="rewrite: JSON file mapping rule IDs to their new When/Do/Not text")
+    s.add_argument("text", nargs="*")
+    s.add_argument("--when", help="add: the trigger (with --do and optional --not the rule is built as an interface)")
+    s.add_argument("--do", help="add: the action the rule asks for")
+    s.add_argument("--not", dest="not_", help="add: what the rule forbids")
+    s.add_argument("--agent", "-a")
+    s.add_argument("--project", "-p")
+    s.add_argument("--reason", "-r")
+    s.add_argument("--topic", "-t", help="topic heading the rule goes under (required once rules are grouped)")
+    s.add_argument("--replaces", help="ID (R-087) or a piece of the text of the current rule this one replaces; "
+                                      "it moves to rules-archive.md")
+    s.add_argument("--archived", action="store_true", help="with `list`: the retired rules from rules-archive.md")
+    s.add_argument("--enforced-by", help="add: comma-separated paths of the test, hook or checker that enforces the rule")
+    s.add_argument("--judgment-only", help="add: why nothing in code can check the rule (instead of --enforced-by)")
+    s.add_argument("--json", action="store_true", help="with `enforcement` or `lint`: machine-readable output")
+    s.set_defaults(fn=cmd_rule)
+
+    s = sub.add_parser("instinct", help="habits grown from past mistakes: `instinct list`, `instinct add \"...\" --from EB-xxx`")
+    s.add_argument("action", choices=("add", "list"))
+    s.add_argument("text", nargs="*")
+    s.add_argument("--from", dest="eb", help="add: the EB id in learn/error-bank.md this habit comes from (required)")
+    s.add_argument("--agent", "-a")
+    s.set_defaults(fn=cmd_instinct)
 
     s = sub.add_parser("claim", help="say you are working on files of a repo now (exit 3 = overlap)")
     s.add_argument("--summary", "-m", required=True)
@@ -481,6 +611,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("status", help="health, per-agent activity, conflicts, metrics (exit 1 if attention needed)")
     s.add_argument("--json", action="store_true")
+    s.add_argument("--accept-drop", metavar="REASON", default=None,
+                   help="accept a deliberate drop (over half) in what status counted; the reason is logged")
     s.set_defaults(fn=cmd_status)
 
     s = sub.add_parser("tail", help="latest journal events")
@@ -528,6 +660,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("label")
     s.add_argument("--take", required=True, choices=("truth", "target"))
     s.set_defaults(fn=cmd_resolve)
+
+    s = sub.add_parser("mcp", help="serve the hub to any MCP agent over stdio (needs: pip install 'aisync[mcp]')")
+    s.set_defaults(fn=cmd_mcp)
+    s = sub.add_parser("tidy", help="rules clerk: likely duplicates, rules not cited lately, core budget, shape and enforcer gaps (proposals only)")
+    s.add_argument("--json", action="store_true")
+    s.add_argument("--write", action="store_true", help="write <hub>/tidy/<date>.md instead of printing")
+    s.set_defaults(fn=cmd_tidy)
+    s = sub.add_parser("rulecheck", help="tidy check: every hard fact of the old rules is still current or superseded (exit 1 if not)")
+    s.add_argument("before", help="rules file before the tidy (e.g. git show <rev>:preferences.md > before.md)")
+    s.add_argument("after", nargs="?", default=None, help="rules file after the tidy (default: the hub preferences.md)")
+    s.add_argument("--archive", default=None, help="retired-rules file (default: rules-archive.md next to the after file)")
+    s.add_argument("--accept-drop", metavar="REASON", default=None,
+                   help="accept a deliberate drop (over half) in the rules compared; the reason is logged")
+    s.set_defaults(fn=cmd_rulecheck)
 
     s = sub.add_parser("resume", help="clear failure counters after fixing a paused sync")
     s.set_defaults(fn=cmd_resume)

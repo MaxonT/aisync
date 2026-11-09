@@ -277,7 +277,9 @@ def build(root: Path | None = None) -> Path:
                     text="feature flags are removed within two weeks of full rollout",
                     reason="three stale flags were found in checkout")
     codex = targets["codex"]
-    codex.write_text(codex.read_text().replace(
-        BASE_RULES[1], BASE_RULES[1] + "\n- Prefer small PRs: under 400 changed lines unless it is a rename."))
+    lines = codex.read_text().split("\n")            # the first cycle gave each rule an ID, so match by its words
+    at = next(i for i, ln in enumerate(lines) if BASE_RULES[1].removeprefix("- ") in ln)
+    lines.insert(at + 1, "- Prefer small PRs: under 400 changed lines unless it is a rename.")
+    codex.write_text("\n".join(lines))
     core.run_cycle(cfg, "demo")
     return root

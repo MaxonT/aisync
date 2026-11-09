@@ -67,9 +67,60 @@ class NewsTests(Base):
         self.assertIn("(+5 older", text)
 
 
+class NewsSizeTests(Base):
+    """2026-11-08: a rules slim re-announced every rule as NEW and injected 48.9 KB into each session."""
+
+    def _rules(self, lines: list[str]):
+        p = self.home / "preferences.md"
+        text = p.read_text()
+        blk = core.extract_block(text)
+        head = blk.splitlines()[0]
+        p.write_text(core.replace_block(text, "\n".join([head, "## Owner preferences", "### T"] + lines + [core.BLOCK_END])))
+
+    def test_reworded_rules_are_listed_by_id_not_resent(self):
+        self._rules([f"- [R-{100 + i}] old wording number {i} (2026-10-01 · x)" for i in range(10)])
+        hooks.news(self.cfg, "codex", "s")
+        self._rules([f"- [R-{100 + i}] When: case {i}. Do: thing {i}. (2026-10-01 · x)" for i in range(10)]
+                    + ["- [R-200] When: brand new. Do: follow it. (2026-11-08 · y)"])
+        rep = hooks.news(self.cfg, "codex", "s")
+        self.assertEqual(rep["new_rules"], ["- [R-200] When: brand new. Do: follow it. (2026-11-08 · y)"])
+        self.assertEqual(len(rep["reworded_rules"]), 10)
+        text = hooks.news_text(rep)
+        self.assertIn("NEW shared rule", text)
+        self.assertIn("10 shared rules were reworded under the same IDs (R-100, R-101", text)
+        self.assertNotIn("When: case 3", text)
+
+    def test_few_reworded_rules_are_shown_in_full(self):
+        self._rules(["- [R-100] old wording (2026-10-01 · x)"])
+        hooks.news(self.cfg, "codex", "s")
+        self._rules(["- [R-100] When: x. Do: y. (2026-10-01 · x)"])
+        text = hooks.news_text(hooks.news(self.cfg, "codex", "s"))
+        self.assertIn("Reworded shared rule(s), same ID:", text)
+        self.assertIn("When: x. Do: y.", text)
+
+    def test_many_new_rules_and_total_size_are_capped(self):
+        self._rules([])
+        hooks.news(self.cfg, "codex", "s")
+        self._rules([f"- [R-{300 + i}] " + ("long rule text " * 40) + f"{i} (2026-11-08 · y)" for i in range(20)])
+        text = hooks.news_text(hooks.news(self.cfg, "codex", "s"))
+        self.assertIn("(+12 more new rules", text)
+        self.assertLessEqual(len(text), hooks.NEWS_MAX_CHARS + 120)
+        self.assertIn("cut at", hooks._cap("x" * (hooks.NEWS_MAX_CHARS + 10)))
+
+    def test_renumbered_instinct_is_not_news(self):
+        p = self.t / "instincts.md"
+        p.write_text("# h\n\n1. alpha（EB-001）\n2. dup（EB-002）\n3. beta（EB-003）\n")
+        self.write_config(f'instincts_path = "{p}"\nerrors_path = "{self.t / "e.md"}"\n')
+        self.cfg = core.load_config(self.home)
+        hooks.news(self.cfg, "codex", "s")
+        p.write_text("# h\n\n1. alpha（EB-001）\n2. beta（EB-003）\n3. gamma（EB-004）\n")
+        self.assertEqual(hooks.news(self.cfg, "codex", "s")["new_instincts"], ["3. gamma（EB-004）"])
+
+
 class HandleTests(Base):
-    def test_claude_code_session_start_silent_then_prompt_injects(self):
-        self.assertEqual(hooks.handle("claude-code", {"hook_event_name": "SessionStart", "session_id": "x"}, self.cfg), "")
+    def test_claude_code_session_start_has_no_news_then_prompt_injects(self):
+        start = hooks.handle("claude-code", {"hook_event_name": "SessionStart", "session_id": "x"}, self.cfg)
+        self.assertNotIn("While you were working", start)      # SessionStart carries instincts only, never news
         core.append_event(self.cfg, agent="trae", kind="dev_log", summary="trae shipped promote")
         out = json.loads(hooks.handle("claude-code", {"hook_event_name": "UserPromptSubmit", "session_id": "x"}, self.cfg))
         self.assertEqual(out["hookSpecificOutput"]["hookEventName"], "UserPromptSubmit")
@@ -147,7 +198,8 @@ class InstallTests(Base):
         (home / ".claude").mkdir(parents=True)
         (home / ".claude" / "settings.json").write_text(json.dumps(
             {"model": "x", "hooks": {"UserPromptSubmit": [{"hooks": [{"type": "command", "command": "other"}]}]}}))
-        self.assertEqual(hooks.install_claude(home, "/bin/aisync"), ["SessionStart", "UserPromptSubmit", "PostToolUse"])
+        self.assertEqual(hooks.install_claude(home, "/bin/aisync"),
+                         ["SessionStart", "UserPromptSubmit", "PostToolUse"])
         self.assertEqual(hooks.install_claude(home, "/bin/aisync"), [])
         data = json.loads((home / ".claude" / "settings.json").read_text())
         self.assertEqual(data["model"], "x")

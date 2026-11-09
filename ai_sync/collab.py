@@ -20,7 +20,7 @@ import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from . import core
+from . import core, ruleids
 
 RULES_HEAD = "### Rules added by agents (via aisync, newest last)"
 META_HEAD = "## Meta rule"
@@ -46,8 +46,9 @@ def rule_lines(block: str) -> list[str]:
     return [l for l in block.splitlines() if l.startswith("- ")]
 
 
-def _insert_rule(cfg: core.Config, bullet: str, key_text: str) -> bool:
-    """Append one bullet inside the owner-preferences block. False if an equal rule exists."""
+def _insert_rule(cfg: core.Config, bullet: str, key_text: str) -> str:
+    """Append one bullet, with the next free ID, inside the owner-preferences block.
+    Returns the bullet as written, or "" if an equal rule exists."""
     path = cfg.root / "preferences.md"
     text = path.read_text()
     block = core.extract_block(text)
@@ -55,32 +56,149 @@ def _insert_rule(cfg: core.Config, bullet: str, key_text: str) -> bool:
         raise ValueError("preferences.md has no owner-preferences block")
     key = _norm(key_text)[:60]
     if key and any(key in _norm(l) for l in rule_lines(block)):
-        return False
+        return ""
+    bullet = ruleids.with_id(bullet, ruleids.next_id(cfg))
     body = block[: -len(core.BLOCK_END)].rstrip("\n")
     if RULES_HEAD not in body:
         body += f"\n\n{RULES_HEAD}\n"
     new_block = body + "\n" + bullet + "\n" + core.BLOCK_END
     core.atomic_write(path, core.replace_block(text, new_block))
-    return True
+    return bullet
 
 
-def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", project: str = "") -> dict:
+SUPERSEDED_HEAD = "### 已取代"
+
+
+def topics(block: str) -> list[str]:
+    """Topic headings of a tidied rules block (### headings other than 已取代 and the legacy list)."""
+    return [l[4:].strip() for l in block.splitlines()
+            if l.startswith("### ") and l.strip() != SUPERSEDED_HEAD and l.strip() != RULES_HEAD]
+
+
+def _sentences(text: str) -> int:
+    """Sentence ends are . ! ? followed by a space or the end, and 。！？ anywhere. A dot inside a file name or date
+    (x.env, x_autopilot.py, 2026-10-27) and semicolons do not end a sentence (2026-10-27: three false rejections)."""
+    return len([x for x in re.split(r"(?<=[.!?])(?=\s|$)\s*|(?<=[。！？])\s*", text) if x.strip()])
+
+
+def _insert_topic_rule(cfg: core.Config, topic: str, bullet: str, key_text: str, replaces: str, new_name: str) -> dict:
+    """Put a rule at the top of its topic with the next free ID; the rule it replaces (given by ID like R-087,
+    or by a piece of its text) moves to rules-archive.md with its retired date and the new rule's ID."""
+    path = cfg.root / "preferences.md"
+    text = path.read_text()
+    block = core.extract_block(text)
+    if block is None:
+        raise ValueError("preferences.md has no owner-preferences block")
+    names = topics(block)
+    hit = [t for t in names if topic.lower() in t.lower()]
+    if len(hit) != 1:
+        raise ValueError(f"--topic must match exactly one topic; topics: {' | '.join(names)}")
+    lines = block.splitlines()
+    span = None
+    if replaces:
+        rid = ruleids.is_id(replaces)
+        cur = [i for i, l in enumerate(lines) if l.startswith("- ") and not _in_superseded(lines, i)
+               and (ruleids.bullet_id(l) == rid if rid else replaces in l)]
+        if len(cur) != 1:
+            what = f"rule {rid}" if rid else "current rule"
+            raise ValueError(f"--replaces must match exactly one {what} (matched {len(cur)})")
+        i = cur[0]
+        end = i + 1
+        while end < len(lines) and lines[end].startswith("  ") and lines[end].strip():
+            end += 1
+        span = (i, end)
+    # Duplicate check: only current rules count, minus the one being replaced. A revision usually
+    # keeps the old rule's opening words, and 已取代 lines are history, not rules.
+    key = _norm(key_text)[:60]
+    live = [l for k, l in enumerate(lines) if l.startswith("- ") and not _in_superseded(lines, k)
+            and not (span and span[0] <= k < span[1])]
+    if key and any(key in _norm(l) for l in live):
+        return {"added": False, "moved": None}
+    new_id = ruleids.next_id(cfg)
+    bullet = ruleids.with_id(bullet, new_id)
+    moved = None
+    if span:
+        i, end = span
+        old = " ".join(x.strip() for x in lines[i:end])
+        if not ruleids.bullet_id(old):              # a rule written before IDs existed gets one on the way out
+            old = ruleids.with_id(old, ruleids.next_id(cfg))
+        day = f"{datetime.now().astimezone():%Y-%m-%d}"
+        moved = ruleids.archive_line(old, day, new_id, note=f" 被 {new_id}「{new_name}」取代（{day}）")
+        del lines[i:end]
+    h = lines.index(f"### {hit[0]}")
+    lines.insert(h + 1, bullet)
+    if moved:
+        ruleids.archive_add(cfg, [moved])           # history first: a crash in between never loses the old text
+    core.atomic_write(path, core.replace_block(text, "\n".join(lines)))
+    return {"added": True, "moved": moved, "id": new_id, "bullet": bullet}
+
+
+def _in_superseded(lines: list[str], i: int) -> bool:
+    for l in reversed(lines[:i]):
+        if l.startswith("### "):
+            return l.strip() == SUPERSEDED_HEAD
+    return False
+
+
+def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", project: str = "",
+             topic: str = "", replaces: str = "", enforced_by: str = "", judgment_only: str = "") -> dict:
+    """Add a shared rule.
+
+    Once preferences.md is grouped into topics, the writing standard applies:
+    pick a topic, write only the current rule in at most three sentences, end with the source tag,
+    and move the rule it replaces (by ID or text) into rules-archive.md in the same write. Every new rule
+    gets the next free ID. The reason goes to the journal only.
+    Before the tidy (no topic headings) it appends to the legacy list as before.
+    A new rule may name what enforces it (enforced_by paths or a judgment_only reason; required with
+    `require_enforcer = true`); it is written to rules-enforcement.toml under the new ID, never into the rules block.
+    """
+    from . import enforcement
     agent, text = (agent or "").strip(), " ".join((text or "").split())
     if not agent:
         raise ValueError("agent is required (pass --agent or set AISYNC_AGENT)")
     if len(text) < 8:
         raise ValueError("rule text is too short")
+    entry = (enforcement.check_args(enforced_by, judgment_only)
+             if cfg.require_enforcer or enforced_by or judgment_only else None)   # optional unless require_enforcer
     who = agent + (f", {project}" if project else "")
-    bullet = f"- {_stamp()} ({who}): {text}" + (f" Reason: {' '.join(reason.split())}" if reason.strip() else "")
-    with core.locked(cfg):
-        added = _insert_rule(cfg, bullet, text)
+    block = core.extract_block((cfg.root / "preferences.md").read_text()) or ""
+    if topics(block):
+        if not topic:
+            raise ValueError(f"--topic is required; topics: {' | '.join(topics(block))}")
+        if _sentences(text) > 3 and not cfg.rule_spec:
+            raise ValueError("a rule is at most three sentences; put the why in --reason")
+        if cfg.rule_spec:
+            from . import rulespec
+            bad = rulespec.problems(text, need_id=False, need_tag=False)
+            if bad:
+                raise ValueError("rule is not an interface (" + "; ".join(bad) + "); write "
+                                 "'When: <trigger>. Do: <action>. Not: <forbidden>.' or pass --when/--do/--not")
+        bullet = f"- {text.rstrip()} ({datetime.now().astimezone():%Y-%m-%d} · {who})"
+        with core.locked(cfg):
+            rep = _insert_topic_rule(cfg, topic, bullet, text, replaces, text[:30])
+        added = rep["added"]
+        bullet = rep.get("bullet", bullet)
+    else:
+        bullet = f"- {_stamp()} ({who}): {text}" + (f" Reason: {' '.join(reason.split())}" if reason.strip() else "")
+        with core.locked(cfg):
+            written = _insert_rule(cfg, bullet, text)
+        added, bullet, rep = bool(written), written or bullet, {"moved": None}
+    if added and entry is not None:
+        with core.locked(cfg):
+            enforcement.put(cfg, ruleids.bullet_id(bullet), entry)
     if added:
+        why = f" Reason: {' '.join(reason.split())}" if reason.strip() and topics(block) else ""
         core.append_event(cfg, agent=agent, kind="rule_change", project=project,
-                          summary=f"shared rule added: {text}", files=["preferences.md"])
-    return {"added": added, "rule": bullet}
+                          summary=f"shared rule added: [{ruleids.bullet_id(bullet)}] {text}{why}"
+                                  + (f" (replaces [{ruleids.bullet_id(rep['moved'])}])" if rep.get("moved") else ""),
+                          files=["preferences.md"] + ([ruleids.ARCHIVE] if rep.get("moved") else []))
+    return {"added": added, "rule": bullet, "moved": rep.get("moved"), "id": ruleids.bullet_id(bullet) if added else None}
 
 
-def rule_list(cfg: core.Config) -> list[str]:
+def rule_list(cfg: core.Config, archived: bool = False) -> list[str]:
+    """Current rules (each starts with its ID), or the retired ones from rules-archive.md."""
+    if archived:
+        return ruleids.archive_entries(cfg)
     block = core.extract_block((cfg.root / "preferences.md").read_text()) or ""
     return rule_lines(block)
 
@@ -159,6 +277,10 @@ def harvest_rules(cfg: core.Config) -> dict:
                 bullet = f"- {ts} (from {repo} AGENTS.md): {summary} Full text: `{_tilde(src)}`."
                 with core.locked(cfg):
                     added = _insert_rule(cfg, bullet, summary)
+                    if added:                  # imports are never blocked; they count as none until someone says
+                        from . import enforcement
+                        enforcement.put(cfg, ruleids.bullet_id(added),
+                                        {"none": f"imported from {repo} AGENTS.md without an enforcer"})
                 if added:
                     core.append_event(cfg, agent=f"repo:{repo}", kind="rule_change", project=repo,
                                       summary=f"shared rule imported from {repo} AGENTS.md: {summary}",

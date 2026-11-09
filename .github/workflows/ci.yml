@@ -1,6 +1,6 @@
 # What: CI for aisync: the full offline suite (including build-wheel -> fresh venv -> `aisync demo`).
 # Why: every PR must be green before it merges; macOS covers the kqueue watcher, Linux the poll fallback.
-# How: runs on every push and pull request; locally: python3 -m unittest discover -s tests
+# How: runs on every push and pull request; locally: python3 -m pytest -q tests (pytest and mcp are test-only)
 name: ci
 
 on:
@@ -18,11 +18,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # the privacy scan reads commits since the last tag
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
+      - name: Test tools (runtime stays stdlib-only)
+        run: python -m pip install -q pytest "mcp>=2.3,<3"
       - name: Tests
-        run: python -m unittest discover -s tests -v
+        run: python -m pytest -q tests
+      - name: Privacy scan (tree, wheel, commits since the last tag)
+        run: python tools/privacy_scan.py --history
 
   install-script:
     # docs/install.sh in clean containers: the git gate first, then a real install of this commit's wheel

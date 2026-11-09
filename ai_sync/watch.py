@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import os
 import select
+import sys
 import time
+from pathlib import Path
 
 from . import core
 
@@ -42,10 +44,14 @@ def snapshot(paths: list[str]) -> dict:
     return out
 
 
-def _wait_events(paths: list[str], timeout: float) -> bool:
-    """Block until one of `paths` changes or `timeout` passes. True = something fired."""
+def _wait_events(paths: list[str], timeout: float, since: dict | None = None) -> bool:
+    """Block until one of `paths` changes or `timeout` passes. True = something fired.
+    `since` = the caller's last snapshot: a change made after it but before the watches are armed counts too
+    (11/02: a write in that gap was missed until the next reconcile, 10 minutes later)."""
     if not hasattr(select, "kqueue"):                 # non-macOS fallback: cheap stat poll
-        before = snapshot(paths)
+        before = since if since is not None else snapshot(paths)
+        if snapshot(paths) != before:
+            return True
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             time.sleep(min(2.0, max(0.05, end - time.monotonic())))
@@ -65,7 +71,10 @@ def _wait_events(paths: list[str], timeout: float) -> bool:
             fds.append(fd)
             changes.append(select.kevent(fd, filter=select.KQ_FILTER_VNODE,
                                          flags=select.KQ_EV_ADD | select.KQ_EV_CLEAR, fflags=flags))
-        return bool(kq.control(changes, 64, max(0.0, timeout)))
+        kq.control(changes, 0, 0)                     # arm first, then look for a change that came before arming
+        if since is not None and snapshot(paths) != since:
+            return True
+        return bool(kq.control(None, 64, max(0.0, timeout)))
     finally:
         for fd in fds:
             os.close(fd)
@@ -79,9 +88,32 @@ def _beat(cfg: core.Config, state: str) -> None:
     core.save_health(cfg, h)
 
 
+CODE_DIR = Path(__file__).resolve().parent
+
+
+def code_stamp(cfg: core.Config) -> float:
+    """Newest mtime of the ai_sync source and the hub config: a long-running watcher compares it every loop."""
+    files = list(CODE_DIR.glob("*.py")) + [cfg.root / "config.toml"]
+    return max((f.stat().st_mtime for f in files if f.exists()), default=0.0)
+
+
+def under_test() -> bool:
+    return core.under_test()
+
+
+def restart() -> None:
+    """Replace this process with a fresh watcher (same PID, so launchd keeps tracking it)."""
+    if under_test():
+        raise RuntimeError("watch.restart under a test: replace it with a mock")
+    os.execv(sys.executable, [sys.executable, "-m", "ai_sync", "watch"])
+
+
 def run_watch(cfg: core.Config, max_cycles: int | None = None, max_seconds: float | None = None) -> int:
+    """The watcher once ran code and config from boot for days, so deployed fixes did nothing
+    and an old render kept writing the progress table back; it now restarts itself when either changes."""
     started = time.monotonic()
     cycles = 0
+    stamp = code_stamp(cfg)
 
     def cycle(reason: str) -> None:
         nonlocal cycles
@@ -103,6 +135,11 @@ def run_watch(cfg: core.Config, max_cycles: int | None = None, max_seconds: floa
         if (cfg.root / "STOP").exists():
             _beat(cfg, "stopped")
             return 0
+        if code_stamp(cfg) != stamp:
+            core.log_run(cfg, {"ts": core.now_iso(), "level": "info", "message": "code or config changed: restarting"})
+            _beat(cfg, "restarting")
+            restart()
+            return 3                                   # only reached when restart is replaced (tests)
         if max_cycles is not None and cycles >= max_cycles:
             return 0
         if max_seconds is not None and now - started >= max_seconds:
@@ -117,7 +154,7 @@ def run_watch(cfg: core.Config, max_cycles: int | None = None, max_seconds: floa
         if max_seconds is not None:
             timeout = min(timeout, max_seconds - (now - started))
 
-        if timeout > 0 and _wait_events(paths, timeout):
+        if timeout > 0 and _wait_events(paths, timeout, snap):
             paths = watch_paths(cfg)              # pick up new/renamed files
             cur = snapshot(paths)
             if cur != snap:

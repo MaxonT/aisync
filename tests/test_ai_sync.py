@@ -12,7 +12,9 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
+import git_env  # noqa: F401  (unittest runs: scrub git hook variables before any test)
 from ai_sync import cli, core, watch
 
 BLOCK = "<!-- owner-preferences:start (shared) -->\n- rule A\n<!-- owner-preferences:end -->"
@@ -31,6 +33,11 @@ def _append_many(home, n):
         core.append_event(cfg, agent=f"p{os.getpid()}", kind="dev_log", summary=f"e{i}")
 
 
+def _no_instincts(t):
+    """Default config lines: instincts/errors point at missing temp files, never the real ops branch."""
+    return f'instincts_path = "{t / "no-instincts.md"}"\nerrors_path = "{t / "no-errors.jsonl"}"\n'
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -38,7 +45,10 @@ class Base(unittest.TestCase):
         self.home = self.t / "hub"
         self.home.mkdir()
         os.environ["AISYNC_HOME"] = str(self.home)
+        os.environ["AISYNC_STATE_DIR"] = str(self.home / "state")   # the push gate's state: never the live one
         os.environ["AISYNC_NO_NOTIFY"] = "1"
+        os.environ["AISYNC_NO_TIDY"] = "1"       # the cycle's daily tidy never spawns from a test
+        os.environ["AISYNC_UNDER_TEST"] = "1"    # children of tests (CLI subprocesses) never execv or spawn either
         # never read the machine's global git config (its core.hooksPath would add Agent trailers)
         self._git_env = {k: os.environ.get(k) for k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM")}
         os.environ["GIT_CONFIG_GLOBAL"] = str(self.t / "gitconfig-global")
@@ -61,7 +71,8 @@ class Base(unittest.TestCase):
     def write_config(self, extra=""):
         (self.home / "config.toml").write_text(
             f'debounce_secs = 0.2\nmax_wait_secs = 1\nmin_flush_interval_secs = 0\nreconcile_secs = 600\n'
-            f'git_retries = 2\nbackoff_base_secs = 0.01\nfail_threshold = 2\n{extra}\n'
+            f'git_retries = 2\nbackoff_base_secs = 0.01\nfail_threshold = 2\n'
+            f'{extra if "instincts_path" in extra else _no_instincts(self.t) + extra}\n'
             f'[[target]]\nlabel = "a"\npath = "{self.a}"\n\n[[target]]\nlabel = "b"\npath = "{self.b}"\n\n'
             f'[[project]]\npath = "{self.proj}"\n')
         self.cfg = core.load_config()
@@ -304,18 +315,52 @@ class FlushTests(Base):
 class WatchTests(Base):
     def test_event_triggers_one_debounced_cycle(self):
         core.distribute(self.cfg)
-        th = threading.Thread(target=watch.run_watch, args=(self.cfg,), kwargs={"max_cycles": 2, "max_seconds": 10})
-        th.start()
-        time.sleep(0.5)
-        for i in range(3):                                    # a burst -> one cycle
-            core.append_event(self.cfg, agent="cursor", kind="note", summary=f"burst {i}")
-            time.sleep(0.05)
-        th.join(10)
+        # Wait for the watcher's baseline snapshot instead of a fixed sleep: under a loaded run (-n 4) the startup
+        # cycle took over 0.5 s, the burst landed in the startup commit or the baseline, and no "event" cycle came.
+        ready, real_snapshot = threading.Event(), watch.snapshot
+
+        def snapshot(paths):
+            snap = real_snapshot(paths)
+            ready.set()
+            return snap
+        with mock.patch.object(watch, "snapshot", snapshot):
+            th = threading.Thread(target=watch.run_watch, args=(self.cfg,), kwargs={"max_cycles": 2, "max_seconds": 30})
+            th.start()
+            self.assertTrue(ready.wait(30), "watcher never took its baseline snapshot")
+            for i in range(3):                                # a burst (inside debounce_secs 0.2) -> one cycle
+                core.append_event(self.cfg, agent="cursor", kind="note", summary=f"burst {i}")
+            th.join(30)
         self.assertFalse(th.is_alive())
         runs = [r for r in core.read_runs(self.cfg) if "steps" in r]
         self.assertEqual([r["reason"] for r in runs], ["startup", "event"])
         log = subprocess.run(["git", "log", "--format=%s"], cwd=self.home, capture_output=True, text=True).stdout
         self.assertIn("3 event(s) from cursor", log)
+
+    def test_a_change_before_the_watches_are_armed_is_not_missed(self):
+        f = self.t / "w.txt"
+        f.write_text("a")
+        snap = watch.snapshot([str(f)])
+        f.write_text("ab")                                    # lands after the snapshot, before _wait_events arms
+        t0 = time.monotonic()
+        self.assertTrue(watch._wait_events([str(f)], 5, snap))
+        self.assertLess(time.monotonic() - t0, 2)
+        self.assertFalse(watch._wait_events([str(f)], 0.2, watch.snapshot([str(f)])))
+
+    def test_watch_restarts_itself_when_code_or_config_changes(self):
+        """EB-073: the watcher kept boot-time code and config for days; deployed fixes did nothing."""
+        stamps = iter([1.0, 1.0, 2.0])
+        with mock.patch.object(watch, "code_stamp", lambda cfg: next(stamps, 2.0)), \
+                mock.patch.object(watch, "restart") as rs:
+            self.assertEqual(watch.run_watch(self.cfg, max_seconds=10), 3)
+        rs.assert_called_once()
+        self.assertTrue(any("restarting" in r.get("message", "") for r in core.read_runs(self.cfg)))
+        with self.assertRaisesRegex(RuntimeError, "under a test"):
+            watch.restart()
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PYTEST_CURRENT_TEST", None)
+            os.environ.pop("AISYNC_UNDER_TEST", None)
+            self.assertTrue(core.under_test())                  # plain unittest: "unittest" is imported
+        self.assertGreater(watch.code_stamp(self.cfg), 0)
 
     def test_idle_watch_does_nothing_and_stop_file_exits(self):
         (self.home / "STOP").write_text("")
@@ -366,7 +411,7 @@ class CliTests(Base):
         self.assertEqual(code, 0, out)
         self.assertIn("trae", out)
         code, out = self.run_cli("status", "--json")
-        self.assertEqual(json.loads(out)["journal"]["events"], 1)
+        self.assertEqual(json.loads(out)["journal"]["events"], 2)   # the log line + the sync that numbered the rules
         self.assertEqual(self.run_cli("resume")[0], 0)
 
     def test_log_requires_agent(self):
@@ -395,3 +440,81 @@ class CliTests(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_old_blockers_render_as_a_count():
+    """blockers older than 7 days show only as a count in agents.md."""
+    from datetime import datetime, timedelta
+    from ai_sync import core
+    now = datetime.now().astimezone()
+    bs = [{"ts": (now - timedelta(days=d)).isoformat(timespec="seconds"), "agent": "a", "project": "p", "summary": f"b{d}"}
+          for d in (1, 6, 8, 30)] + [{"ts": "not a time", "agent": "a", "project": "p", "summary": "odd"}]
+    recent, old = core._split_blockers(bs, now)
+    assert [b["summary"] for b in recent] == ["b1", "b6", "odd"]
+    assert [b["summary"] for b in old] == ["b8", "b30"]
+
+
+SUP_BLOCK = ("<!-- owner-preferences:start (shared) -->\n### Topic\n- rule A\n\n### 已取代\n- old rule one\n- old rule two\n"
+             "<!-- owner-preferences:end -->")
+
+
+class SlimCopyTests(Base):
+    """tool copies omit the 已取代 history section; the truth and full copies keep it."""
+
+    def setUp(self):
+        super().setUp()
+        for p in (self.home / "preferences.md", self.a, self.b):
+            p.write_text(core.replace_block(p.read_text(), SUP_BLOCK))
+        core.distribute(self.cfg)                      # sync history exists, as in production
+        cfg_path = self.home / "config.toml"
+        cfg_path.write_text(cfg_path.read_text().replace('label = "a"\n', 'label = "a"\nslim = true\n'))
+        self.cfg = core.load_config()
+
+    def test_strip_and_merge_back_are_inverse_for_the_normal_layout(self):
+        slim = core.strip_superseded(SUP_BLOCK)
+        self.assertNotIn("已取代", slim)
+        self.assertIn("rule A", slim)
+        self.assertEqual(core.merge_back(slim, SUP_BLOCK), SUP_BLOCK)
+        self.assertEqual(core.strip_superseded(BLOCK), BLOCK)          # no history section: unchanged
+        self.assertEqual(core.merge_back(BLOCK, BLOCK), BLOCK)
+
+    def test_slim_copy_drops_history_full_copy_keeps_it(self):
+        rep = core.distribute(self.cfg)
+        self.assertEqual(rep["updated"], ["a"])
+        self.assertNotIn("已取代", self.a.read_text())
+        self.assertTrue(self.a.read_text().startswith("# A head") and "A tail" in self.a.read_text())
+        self.assertIn("old rule one", self.b.read_text())
+        self.assertIn("old rule one", (self.home / "preferences.md").read_text())
+        self.assertEqual(sorted(core.distribute(self.cfg)["in_sync"]), ["a", "b"])   # idempotent
+
+    def test_truth_change_reaches_the_slim_copy_without_history(self):
+        core.distribute(self.cfg)
+        p = self.home / "preferences.md"
+        p.write_text(core.replace_block(p.read_text(), SUP_BLOCK.replace("rule A", "rule B")))
+        rep = core.distribute(self.cfg)
+        self.assertEqual(sorted(rep["updated"]), ["a", "b"])
+        self.assertIn("rule B", self.a.read_text())
+        self.assertNotIn("已取代", self.a.read_text())
+
+    def test_hand_edit_of_a_slim_copy_is_adopted_and_history_survives(self):
+        core.distribute(self.cfg)
+        self.a.write_text(core.replace_block(self.a.read_text(), core.strip_superseded(SUP_BLOCK).replace("rule A", "rule from a")))
+        rep = core.distribute(self.cfg)
+        self.assertEqual(rep["adopted"], ["a"])
+        truth = (self.home / "preferences.md").read_text()
+        self.assertIn("rule from a", truth)
+        self.assertIn("old rule one", truth)                           # history not deleted by the adoption
+        self.assertIn("rule from a", self.b.read_text())
+        self.assertIn("old rule two", self.b.read_text())
+        self.assertNotIn("已取代", self.a.read_text())
+
+    def test_blockers_beyond_the_cap_fold_into_one_count(self):
+        for i in range(core.BLOCKER_DETAIL_MAX + 4):
+            core.append_event(self.cfg, agent="x", kind="blocked", summary=f"blocker number {i}", project="p")
+        core.render(self.cfg)
+        text = (self.home / "agents.md").read_text()
+        section = text.split("**Open blockers**")[1].split("**Latest**")[0]        # "Latest" also lists recent events
+        self.assertEqual(section.count("blocker number"), core.BLOCKER_DETAIL_MAX)
+        self.assertIn("more open", section)
+        self.assertIn(f"blocker number {core.BLOCKER_DETAIL_MAX + 3}", section)    # the newest are the ones shown
+        self.assertNotIn("blocker number 0", section)
