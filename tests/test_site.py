@@ -26,7 +26,7 @@ class ReadmeTests(unittest.TestCase):
         order = ["docs/assets/banner.svg", "[!NOTE]", "coworkers who never talk", "a star helps", "## Install",
                  "Read https://maxont.github.io/aisync/install and install aisync for me.",
                  "curl -fsSL https://maxont.github.io/aisync/install.sh | bash", "docs/assets/demo.gif",
-                 "| **Claims** |", "| **Journal** |", "| **Mid-session news** |", "**Dogfooded:** 1,600+ journal events"]
+                 "| **Claims** |", "| **Journal** |", "| **Mid-session news** |", "**Dogfooded:** 6,700+ journal events"]
         pos = [README.find(s) for s in order]
         self.assertNotIn(-1, pos, [s for s, p in zip(order, pos) if p < 0])
         self.assertEqual(pos, sorted(pos))
@@ -36,7 +36,7 @@ class ReadmeTests(unittest.TestCase):
     def test_chinese_readme_mirrors_the_order(self):
         order = ["docs/assets/banner.zh.svg", "[!NOTE]", "从不交流的同事", "点个 star", "## 安装",
                  "install aisync for me.", "install.sh | bash", "docs/assets/demo.zh.gif",
-                 "| **认领** |", "| **日志** |", "| **会话中消息** |", "1,600+"]
+                 "| **认领** |", "| **日志** |", "| **会话中消息** |", "6,700+"]
         pos = [README_ZH.find(s) for s in order]
         self.assertNotIn(-1, pos, [s for s, p in zip(order, pos) if p < 0])
         self.assertEqual(pos, sorted(pos))
