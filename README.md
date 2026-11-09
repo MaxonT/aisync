@@ -27,7 +27,7 @@
 
 If aisync keeps your agents from stepping on each other, a star helps other people find it.
 
-<p align="center"><img src="docs/assets/cli.png" alt="Running aisync in a terminal: a gradient AISYNC pixel logo, then every command grouped as start, every session, look around, keep it running" width="720"></p>
+<p align="center"><img src="docs/assets/cli.png" alt="Running aisync in a terminal: a gradient AISYNC pixel logo, then every command grouped as start, every session, look around, keep the rules lean, keep it running" width="720"></p>
 
 ## Install
 
@@ -63,7 +63,7 @@ Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · t
 
 aisync also does the rules part: one rules block copied into every tool's own rule file, synced 3-way, conflicts never overwritten.
 
-**Dogfooded:** 1,600+ journal events from 5 AI tools over 9 days.
+**Dogfooded:** 6,700+ journal events from 7 AI tools over 4 weeks.
 
 ## Use it
 
@@ -79,7 +79,7 @@ What an agent does during a session:
 ```bash
 aisync claim   -a codex -p api -f app/payments/ -m "SDK upgrade"  # 3 = taken
 aisync log     -a codex -p api -m "SDK 5.0, retries kept"
-aisync rule add -a codex "every API change ships a contract test"
+aisync rule add -a codex --when "changing an API" --do "ship a contract test" --not "merge without one"
 aisync release -a codex -p api
 ```
 
@@ -87,7 +87,12 @@ aisync release -a codex -p api
 |---|---|
 | `init` | create the hub: shared rules, journal, config, local git repo |
 | `log` | append one event (`dev_log`, `decision`, `blocked`, `unblocked`, `rule_change`, `note`) |
-| `rule add` / `rule list` | any agent adds a shared rule; every tool's copy gets it on the next sync |
+| `rule add` / `rule list` | any agent adds a shared rule (`--when/--do/--not`, `--topic`, `--replaces R-012`); every tool's copy gets it on the next sync |
+| `rule lint` / `rule rewrite` / `rule enforcement` | rules not in the When/Do/Not shape / rewrite them by ID without losing a fact / which test or hook keeps each rule |
+| `tidy` | rules clerk: likely duplicates, rules nobody cited lately, core layer over budget; proposals only, you tick them |
+| `rulecheck` | prove a rules cleanup lost no hard fact (paths, numbers, commands, IDs) |
+| `instinct` | optional habit list grown from past mistakes, injected into every session |
+| `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync[mcp]'`) |
 | `claim` / `release` / `claims` | who is working on which files right now; overlap = exit 3 |
 | `news` | what other tools did since this session last looked |
 | `hook <tool>` | entry point for Claude Code, Codex and Cursor hooks (reads hook JSON, never fails) |
@@ -100,6 +105,25 @@ aisync release -a codex -p api
 | `sync` / `watch` | run one sync cycle / the debounced, event-driven loop |
 | `resolve` / `resume` | rule on a rule conflict / clear failure counters after a pause |
 | `demo` | the throwaway hub shown above |
+
+## New in 0.2.0: rules as interfaces, loaded in layers
+
+A rules file grows until every session pays for it and nobody reads it. 0.2.0 treats a rule like an API:
+
+- **When / Do / Not.** Each rule is one line with a stable ID: `[R-087] When: <trigger>. Do: <action>. Not: <forbidden>.`
+  The why goes to the journal, not the rule. `rule_spec = true` refuses anything else; `rule lint` lists misfits;
+  `rule rewrite` reshapes old rules by ID and refuses a rewrite that drops a path, number or command.
+- **Layers.** Mark a tool copy `layer = "core"`: it carries `core_topics` in full and every other topic as one line.
+  When a prompt or tool call touches a topic's keywords (`[shelf]`), the hook injects that topic once per session.
+  On the author's own hub this cut the always-loaded rules from 20,673 to 7,876 tokens; replaying 7 days of
+  transcripts, 98.9% of the 189 times a folded rule was cited, it had been injected before the citation.
+- **A stable prefix.** `progress_file` moves the live progress table out of the shared page, so the page stays
+  byte-identical and prompt caches keep hitting: the next session after a journal event read 61,151 cached tokens
+  instead of 13,060.
+- **A clerk, not a janitor.** `aisync tidy` proposes (duplicates, uncited rules, budget overruns) and never edits;
+  a replaced rule moves to `rules-archive.md` with its ID, nothing is deleted.
+- **Any agent.** Three doors: the AGENTS.md page, the CLI, and `aisync mcp` (tools: rules, rule_add, log, claim,
+  release, news, status, tidy). The core stays standard-library only; the MCP SDK is the optional `aisync[mcp]` extra.
 
 ## How it works
 
@@ -130,9 +154,21 @@ scan_dirs = ["~/projects"]                    # every git repo inside is watched
 rule_sources = []                             # repos whose AGENTS.md "## Meta rule" feeds shared rules
 remote = ""                                   # e.g. "origin" to also push the hub
 
+progress_file = "progress.md"                 # keep agents.md byte-stable; hooks inject progress at session start
+rule_spec = true                              # rule add only accepts When/Do/Not rules
+require_enforcer = false                      # true: every new rule names --enforced-by or --judgment-only
+core_topics = ["Safety", "Meta"]              # topic headings a layered copy carries in full
+instincts_path = ""                           # optional habit file injected at session start
+tidy_daily = false                            # the watcher starts one `aisync tidy --write` a day
+tidy_usage_globs = []                         # files whose R-### mentions count as a rule being used
+
+[shelf]                                       # folded topic -> keywords that pull it into a session
+Deploys = ["deploy", "terraform", "rollback"]
+
 [[target]]                                    # files carrying the shared-rules block
 label = "claude-code"
 path = "~/.claude/CLAUDE.md"
+layer = "core"                                # optional: fold non-core topics, inject them on demand
 ```
 
 To keep `aisync watch` running, start it from your login items, a systemd user unit or a launchd

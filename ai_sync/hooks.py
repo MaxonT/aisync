@@ -32,9 +32,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
-from . import collab, core
+from . import collab, core, instincts
 
 NEWS_MAX_EVENTS = 12
+NEWS_MAX_RULES = 8              # new rules shown in full per injection; the rest are counted
+NEWS_FULL_REWORDED = 3          # more reworded rules than this are listed by ID only
+NEWS_MAX_CHARS = 6000           # hard cap on one news injection
 CURSOR_TTL_DAYS = 7
 HOOK_LOG_MAX_BYTES = 2 * 1024 * 1024
 HOOK_TIMEOUT_SECS = 5
@@ -97,27 +100,87 @@ def news(cfg: core.Config, agent: str, session: str = "", init_only: bool = Fals
     rules = _rules(cfg)
     path = _cursor_path(cfg, agent, session)
     cur = core.load_json(path, None)
-    fresh, new_rules = [], []
+    fresh, new_rules, new_inst, reworded = [], [], [], []
+    itext, ilines, ierr = instincts.read(cfg)
     if cur is not None and not init_only:
         seen = cur.get("seen", 0)
         if seen > len(events):              # journal was reset: start over, report nothing old
             seen = len(events)
         fresh = [e for e in events[seen:] if e.get("agent") != agent]
-        old = set(cur.get("rules", []))
-        new_rules = [r for r in rules if r not in old]
+        old = {core._drop_ids(r) for r in cur.get("rules", [])}
+        new_rules = [r for r in rules if core._drop_ids(r) not in old]   # a rule that only gained its ID is not news
+        old_ids = {_rid(r) for r in cur.get("rules", [])} - {""}
+        reworded = [r for r in new_rules if _rid(r) in old_ids]          # same ID, new words: not a new rule
+        new_rules = [r for r in new_rules if _rid(r) not in old_ids]
+        if "instincts" in cur and not ierr:        # old cursors without the key: nothing to compare, say nothing
+            seen_inst = {_habit(l) for l in cur["instincts"]}            # renumbering a line is not news
+            new_inst = [l for l in ilines if _habit(l) not in seen_inst]
+    prev = cur or {}
+    keep = prev.get("instincts", ilines) if ierr else ilines          # an unreadable file keeps what was seen
+    err_changed = bool(ierr) and ierr != prev.get("instincts_err", "") and cur is not None and not init_only
     path.parent.mkdir(parents=True, exist_ok=True)
-    core.save_json(path, {"seen": len(events), "rules": rules, "ts": core.now_iso(), "agent": agent})
+    core.save_json(path, {"seen": len(events), "rules": rules, "ts": core.now_iso(), "agent": agent,
+                          "instincts": keep, "instincts_err": ierr})
     _prune_cursors(cfg)
-    return {"events": fresh, "new_rules": new_rules, "first": cur is None}
+    return {"events": fresh, "new_rules": new_rules, "reworded_rules": reworded, "first": cur is None, "new_instincts": new_inst,
+            "instincts_text": itext, "instincts_err": ierr, "instincts_err_new": err_changed}
+
+
+SHELF_MAX_CHARS = 5000          # one shelved-topic injection; a bigger topic is cut with a pointer
+
+
+def shelf_text(cfg: core.Config, tool: str, session: str, payload: dict) -> str:
+    """Shelved topics this prompt or tool call touches and this session has not been given yet (layers.py)."""
+    if not cfg.core_topics or not any(t.label == tool and t.layer == "core" for t in cfg.targets):
+        return ""
+    from . import layers
+    probe = " ".join(str(payload.get(k) or "") for k in ("prompt", "tool_name"))
+    ti = payload.get("tool_input")
+    if isinstance(ti, dict):
+        probe += " " + " ".join(str(v) for v in ti.values() if isinstance(v, (str, int)))[:4000]
+    truth = core.extract_block((cfg.root / "preferences.md").read_text()) or ""
+    hit = layers.matches(probe, truth, cfg.core_topics, cfg.shelf)
+    if not hit:
+        return ""
+    path = cfg.state / "shelf" / f"{tool}-{re.sub(r'[^A-Za-z0-9_.-]', '_', session or 'none')[:60]}.json"
+    seen = set(core.load_json(path, {}).get("topics", []))
+    new = [t for t in hit if t not in seen]
+    if not new:
+        return ""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    core.save_json(path, {"topics": sorted(seen | set(new)), "ts": core.now_iso()})
+    out = []
+    for name in new:
+        rules = layers.topic_rules(truth, name)
+        out.append(f"[aisync] Shelved rules now in play ({name}, {len(rules)} rules; your work touched it):\n" + "\n".join(rules))
+    text = "\n\n".join(out)
+    if len(text) > SHELF_MAX_CHARS:
+        text = text[:SHELF_MAX_CHARS].rstrip() + "\n(cut: `aisync rule list --topic \"<topic>\"` for the rest)"
+    return text
 
 
 def news_text(rep: dict) -> str:
-    if not rep["events"] and not rep["new_rules"]:
-        return ""
+    extra = []
+    if rep.get("new_instincts"):
+        extra.append(instincts.inject_text("", "", rep["new_instincts"]))
+    if rep.get("instincts_err_new"):
+        extra.append(instincts.inject_text("", rep["instincts_err"]))
+    reworded = rep.get("reworded_rules", [])
+    if not rep["events"] and not rep["new_rules"] and not reworded:
+        return _cap("\n".join(extra))
     out = ["[aisync] While you were working, other AI tools changed things:"]
     if rep["new_rules"]:
         out.append("NEW shared rule(s), follow them from now on:")
-        out += [core._short(r, 600) for r in rep["new_rules"]]
+        out += [core._short(r, 600) for r in rep["new_rules"][:NEWS_MAX_RULES]]
+        if len(rep["new_rules"]) > NEWS_MAX_RULES:
+            out.append(f"(+{len(rep['new_rules']) - NEWS_MAX_RULES} more new rules: `aisync rule list`)")
+    if reworded and len(reworded) <= NEWS_FULL_REWORDED:
+        out.append("Reworded shared rule(s), same ID:")
+        out += [core._short(r, 600) for r in reworded]
+    elif reworded:
+        ids = ", ".join(_rid(r) for r in reworded[:30]) + (" …" if len(reworded) > 30 else "")
+        out.append(f"{len(reworded)} shared rules were reworded under the same IDs ({ids}); "
+                   "reread one with `aisync rule list` when your work touches it.")
     if rep["events"]:
         shown = rep["events"][-NEWS_MAX_EVENTS:]
         for e in shown:
@@ -127,7 +190,24 @@ def news_text(rep: dict) -> str:
         if len(rep["events"]) > len(shown):
             out.append(f"(+{len(rep['events']) - len(shown)} older: `aisync tail -n 30`)")
     out.append("If any of this touches files you are editing, coordinate (`aisync claims`) before going on.")
-    return "\n".join(out)
+    return _cap("\n".join(out + extra))
+
+
+def _rid(rule: str) -> str:
+    m = re.match(r"^-?\s*\[(R-\d{3,})\]", rule)
+    return m.group(1) if m else ""
+
+
+def _habit(line: str) -> str:
+    """An instinct line without its number: '12. text（EB-1）' -> 'text（EB-1）'."""
+    return re.sub(r"^\s*\d+\.\s+", "", line).strip()
+
+
+def _cap(text: str) -> str:
+    """No injection grows past NEWS_MAX_CHARS (2026-11-08: one rules slim injected 48.9 KB into every session)."""
+    if len(text) <= NEWS_MAX_CHARS:
+        return text
+    return text[:NEWS_MAX_CHARS].rstrip() + f"\n(cut at {NEWS_MAX_CHARS} characters: `aisync news` or `aisync tail` for the rest)"
 
 
 def brief_text(cfg: core.Config) -> str:
@@ -169,15 +249,25 @@ def handle(tool: str, payload: dict, cfg: core.Config | None = None) -> str:
         start = event in ("SessionStart", "sessionStart")
         rep = news(cfg, tool, session, init_only=start)
         rec["events"], rec["rules"] = len(rep["events"]), len(rep["new_rules"])
+        rec["instincts"] = len(rep["new_instincts"])
+        parts = [instincts.inject_text(rep["instincts_text"], rep["instincts_err"])]    # SessionStart: the whole file
+        if start and (prog := core.progress_now(cfg)):     # progress_file mode: agents.md no longer carries it
+            parts.append("[aisync] Live progress (other AI tools, claims, blockers):\n" + prog)
+        full = "\n\n".join(p for p in parts if p)
         if tool == "cursor":
             if start:
-                out = json.dumps({"additional_context": brief_text(cfg), "env": {"AISYNC_AGENT": "cursor"}},
-                                 ensure_ascii=False)
+                out = json.dumps({"additional_context": brief_text(cfg) + "\n\n" + full,
+                                  "env": {"AISYNC_AGENT": "cursor"}}, ensure_ascii=False)
             elif (text := news_text(rep)):
                 out = json.dumps({"additional_context": text}, ensure_ascii=False)
-        elif not start and (text := news_text(rep)):       # claude-code, codex: same schema
-            out = json.dumps({"hookSpecificOutput": {"hookEventName": event or "UserPromptSubmit",
-                                                     "additionalContext": text}}, ensure_ascii=False)
+        else:                                              # claude-code, codex: same schema
+            text = full if start else news_text(rep)
+            shelf = "" if start else shelf_text(cfg, tool, session, payload)
+            rec["shelf"] = len(shelf)
+            text = "\n\n".join(x for x in (text, shelf) if x)
+            if text:
+                out = json.dumps({"hookSpecificOutput": {"hookEventName": event or "UserPromptSubmit",
+                                                         "additionalContext": text}}, ensure_ascii=False)
     except Exception as ex:                                 # fail open: a hook must never break the tool
         rec.update(ok=False, error=f"{type(ex).__name__}: {ex}"[:300])
         out = ""
@@ -260,12 +350,15 @@ def _plan_json(tool: str, path: Path, default: dict, mutate: Callable[[dict], li
     return Change(tool, path, old, new, "add hooks: " + ", ".join(added), lambda: _save_with_backup(path, new))
 
 
-def _add_nested(hooks: dict, event: str, command: str) -> bool:
-    """Claude Code / Codex schema: {event: [{hooks: [{type, command, timeout}]}]}. Idempotent."""
+def _add_nested(hooks: dict, event: str, command: str, matcher: str = "") -> bool:
+    """Claude Code / Codex schema: {event: [{matcher?, hooks: [{type, command, timeout}]}]}. Idempotent."""
     groups = hooks.setdefault(event, [])
     if any(h.get("command") == command for g in groups for h in g.get("hooks", [])):
         return False
-    groups.append({"hooks": [{"type": "command", "command": command, "timeout": HOOK_TIMEOUT_SECS}]})
+    group = {"hooks": [{"type": "command", "command": command, "timeout": HOOK_TIMEOUT_SECS}]}
+    if matcher:
+        group = {"matcher": matcher, **group}
+    groups.append(group)
     return True
 
 
