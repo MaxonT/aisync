@@ -563,30 +563,39 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=cmd_log)
 
     s = sub.add_parser("rule", help="shared rules: `rule add --when .. --do .. [--not ..]` (any agent, applies to all), `rule list`, `rule lint`")
-    s.add_argument("action", choices=("add", "list", "enforcement", "lint", "rewrite"))
-    s.add_argument("--file", help="rewrite: JSON file mapping rule IDs to their new When/Do/Not text")
-    s.add_argument("text", nargs="*")
-    s.add_argument("--when", help="add: the trigger (with --do and optional --not the rule is built as an interface)")
-    s.add_argument("--do", help="add: the action the rule asks for")
-    s.add_argument("--not", dest="not_", help="add: what the rule forbids")
-    s.add_argument("--agent", "-a")
-    s.add_argument("--project", "-p")
-    s.add_argument("--reason", "-r")
-    s.add_argument("--topic", "-t", help="topic heading the rule goes under (required once rules are grouped)")
-    s.add_argument("--replaces", help="ID (R-087) or a piece of the text of the current rule this one replaces; "
-                                      "it moves to rules-archive.md")
-    s.add_argument("--archived", action="store_true", help="with `list`: the retired rules from rules-archive.md")
-    s.add_argument("--enforced-by", help="add: comma-separated paths of the test, hook or checker that enforces the rule")
-    s.add_argument("--judgment-only", help="add: why nothing in code can check the rule (instead of --enforced-by)")
-    s.add_argument("--json", action="store_true", help="with `enforcement` or `lint`: machine-readable output")
-    s.set_defaults(fn=cmd_rule)
+    # real subcommands, so the rule text may come after the flags on Python 3.11 too (one positional
+    # list after an `action` positional only parses intermixed on 3.12+)
+    rsub = s.add_subparsers(dest="action", required=True)
+    for action, ahelp in (("add", "add a shared rule every tool follows"), ("list", "print the shared rules"),
+                          ("enforcement", "which test, hook or checker keeps each rule"),
+                          ("lint", "rules not in the When/Do/Not shape"),
+                          ("rewrite", "rewrite rules by ID from a JSON file, refusing lost facts")):
+        r = rsub.add_parser(action, help=ahelp)
+        r.add_argument("text", nargs="*")
+        r.add_argument("--file", help="rewrite: JSON file mapping rule IDs to their new When/Do/Not text")
+        r.add_argument("--when", help="add: the trigger (with --do and optional --not the rule is built as an interface)")
+        r.add_argument("--do", help="add: the action the rule asks for")
+        r.add_argument("--not", dest="not_", help="add: what the rule forbids")
+        r.add_argument("--agent", "-a")
+        r.add_argument("--project", "-p")
+        r.add_argument("--reason", "-r")
+        r.add_argument("--topic", "-t", help="topic heading the rule goes under (required once rules are grouped)")
+        r.add_argument("--replaces", help="ID (R-087) or a piece of the text of the current rule this one replaces; "
+                                          "it moves to rules-archive.md")
+        r.add_argument("--archived", action="store_true", help="with `list`: the retired rules from rules-archive.md")
+        r.add_argument("--enforced-by", help="add: comma-separated paths of the test, hook or checker that enforces it")
+        r.add_argument("--judgment-only", help="add: why nothing in code can check the rule (instead of --enforced-by)")
+        r.add_argument("--json", action="store_true", help="with `enforcement` or `lint`: machine-readable output")
+        r.set_defaults(fn=cmd_rule)
 
     s = sub.add_parser("instinct", help="habits grown from past mistakes: `instinct list`, `instinct add \"...\" --from EB-xxx`")
-    s.add_argument("action", choices=("add", "list"))
-    s.add_argument("text", nargs="*")
-    s.add_argument("--from", dest="eb", help="add: the EB id in learn/error-bank.md this habit comes from (required)")
-    s.add_argument("--agent", "-a")
-    s.set_defaults(fn=cmd_instinct)
+    isub = s.add_subparsers(dest="action", required=True)
+    for action in ("add", "list"):
+        r = isub.add_parser(action, help="add a habit" if action == "add" else "print the habit list")
+        r.add_argument("text", nargs="*")
+        r.add_argument("--from", dest="eb", help="add: the EB id in the error log this habit comes from (required)")
+        r.add_argument("--agent", "-a")
+        r.set_defaults(fn=cmd_instinct)
 
     s = sub.add_parser("claim", help="say you are working on files of a repo now (exit 3 = overlap)")
     s.add_argument("--summary", "-m", required=True)
