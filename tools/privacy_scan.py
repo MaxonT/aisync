@@ -110,7 +110,7 @@ def history_items(root: Path, everything: bool = False):
     tag = subprocess.run(["git", "-C", str(root), "describe", "--tags", "--abbrev=0"],
                          capture_output=True, text=True).stdout.strip()
     rng = ["--all"] if everything or not tag else [f"{tag}..HEAD"]
-    log = subprocess.run(["git", "-C", str(root), "log", *rng, "--format=%x00%H%n%an <%ae>%n%cn <%ce>%n%B"],
+    log = subprocess.run(["git", "-C", str(root), "log", *rng, "--no-merges", "--format=%x00%H%n%an <%ae>%n%cn <%ce>%n%B"],
                          capture_output=True, text=True, check=True).stdout
     for entry in filter(str.strip, log.split("\0")):
         sha = entry.split("\n", 1)[0]
