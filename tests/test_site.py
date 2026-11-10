@@ -23,7 +23,7 @@ def local_refs(text: str) -> list[str]:
 
 class ReadmeTests(unittest.TestCase):
     def test_first_screen_order(self):
-        order = ["docs/assets/banner.svg", "[!NOTE]", "coworkers who never talk", "a star helps", "## Install",
+        order = ["docs/assets/banner.svg", "[!NOTE]", "coworkers who never talk", "## Install",
                  "Read https://maxont.github.io/aisync/install and install aisync for me.",
                  "curl -fsSL https://maxont.github.io/aisync/install.sh | bash", "docs/assets/demo.gif",
                  "| **Claims** |", "| **Journal** |", "| **Mid-session news** |", "**Dogfooded:** 6,700+ journal events"]
