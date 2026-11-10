@@ -25,7 +25,6 @@
 > running Claude Code, Codex or Cursor session what the other tools just did, and stay silent when
 > nothing changed.
 
-If aisync keeps your agents from stepping on each other, a star helps other people find it.
 
 <p align="center"><img src="docs/assets/cli.png" alt="Running aisync in a terminal: a gradient AISYNC pixel logo, then every command grouped as start, every session, look around, keep the rules lean, keep it running" width="720"></p>
 
@@ -45,7 +44,6 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
-After your first successful command, the CLI asks once: `Star MaxonT/aisync on GitHub? [y/N]`. The default is no, it never asks again, and it stays silent in CI, pipes and scripts. A yes stars the repo through your own `gh` login (or prints the link if `gh` is missing). Set `NO_STAR_PROMPT=1` to skip the question.
 
 ## See it
 
