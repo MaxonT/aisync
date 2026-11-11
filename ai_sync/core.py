@@ -555,7 +555,7 @@ def render(cfg: Config) -> dict:
     if cfg.progress_file:
         return _render_split(cfg, lines, changed, cur)
     agents_md = cfg.root / "agents.md"
-    text = agents_md.read_text() if agents_md.exists() else f"# AI collaboration hub\n\n{PROG_START}\n{PROG_END}\n"
+    text = agents_md.read_text() if agents_md.exists() else f"# Context hub\n\n{PROG_START}\n{PROG_END}\n"
     s, e = text.find(PROG_START), text.find(PROG_END)
     if s < 0 or e < 0:
         text = text.rstrip() + f"\n\n{PROG_START}\n{PROG_END}\n"
@@ -586,7 +586,7 @@ def _render_split(cfg: Config, lines: list[str], changed: list[str], cur: dict) 
         atomic_write(p, body)
         changed.append(str(p.name))
     agents_md = cfg.root / "agents.md"
-    text = agents_md.read_text() if agents_md.exists() else "# AI collaboration hub\n"
+    text = agents_md.read_text() if agents_md.exists() else "# Context hub\n"
     pointer = PROG_POINTER.format(path=str(p).replace(str(Path.home()), "~"))
     s, e = text.find(PROG_START), text.find(PROG_END)
     body = (text[:s].rstrip() + "\n\n" + pointer + "\n" + text[e + len(PROG_END):].lstrip("\n")) if s >= 0 and e >= 0 else text
