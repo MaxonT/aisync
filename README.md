@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/banner.svg" width="100%" alt="aisync: advanced context management for all your AI coding tools"/>
+<img src="docs/assets/banner.svg" width="100%" alt="aisync: Multi-Agent Context Management, Coordination & Observability"/>
 
-# aisync: shared context, coordination and verification for multi-agent coding
+# aisync: Multi-Agent Context Management, Coordination & Observability
 
 **One local hub for developers working with multiple AI coding agents: share the right context, coordinate concurrent work, and verify what happened.**
 
@@ -207,7 +207,7 @@ agent that runs `aisync watch`; create `~/.ai-sync/STOP` to stop it cleanly.
 
 ## Standing on the shoulders of
 
-> aisync: shared context, coordination and verification for multi-agent coding. AGENTS.md was the starting idea.
+> aisync: Multi-Agent Context Management, Coordination & Observability. AGENTS.md was the starting idea.
 
 | Project | How it shaped aisync |
 |---|---|
