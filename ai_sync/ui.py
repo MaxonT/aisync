@@ -21,7 +21,7 @@ PINK, VIOLET, CYAN = (240, 101, 149), (132, 94, 247), (34, 184, 207)
 GREEN, AMBER = (64, 192, 87), (250, 176, 5)
 GRAY, INK = (134, 142, 150), (233, 236, 239)
 LOGO_STOPS = (PINK, VIOLET, CYAN)
-TAGLINE = "one standup for all your AI coding tools"
+TAGLINE = "Context management for all your AI coding tools"
 
 # "AISYNC" as a 3x5 pixel font (N is 4 wide), each pixel two columns of the full block (U+2588) or two spaces:
 # every monospace font draws it the same, unlike figlet-style box-drawing lettering.
