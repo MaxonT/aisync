@@ -190,7 +190,7 @@ agent that runs `aisync watch`; create `~/.ai-sync/STOP` to stop it cleanly.
 
 ## Standing on the shoulders of
 
-> aisync: AGENTS.md, but for live coordination between AI tools.
+> aisync: advanced context management for all your AI coding tools. AGENTS.md was the starting idea.
 
 | Project | How it shaped aisync |
 |---|---|
