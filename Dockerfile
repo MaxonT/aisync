@@ -3,7 +3,7 @@
 # How: docker run --rm ghcr.io/maxont/aisync --help
 FROM python:3.12-slim
 LABEL org.opencontainers.image.source="https://github.com/MaxonT/aisync" \
-      org.opencontainers.image.description="One standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor." \
+      org.opencontainers.image.description="Advanced context management for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news hooks for Claude Code, Codex and Cursor." \
       org.opencontainers.image.licenses="MIT"
 WORKDIR /src
 COPY pyproject.toml README.md LICENSE ./

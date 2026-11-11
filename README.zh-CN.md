@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/banner.zh.svg" width="100%" alt="aisync：给你所有的 AI 编程工具开一场站会"/>
+<img src="docs/assets/banner.zh.svg" width="100%" alt="aisync：给你所有的 AI 编程 agent 做上下文管理"/>
 
-# aisync：给你所有的 AI 编程 agent 开一场站会
+# aisync：给你所有的 AI 编程 agent 做上下文管理
 
 **Claude Code、Codex、Cursor 共用一套规则、一本日志和一张“谁在改哪个文件”的认领表，干活途中就能知道别的工具刚做了什么。**
 
@@ -18,7 +18,7 @@
 </div>
 
 > [!NOTE]
-> **你的 AI 工具是一群从不交流的同事，aisync 就是它们的站会。**
+> **你的 AI 工具各带一份自己的上下文，互相看不见。aisync 是它们共用的上下文管理中枢。**
 > 所有工具都围着一个本地 hub（`~/.ai-sync/`，一个 git 仓库）干活。改文件之前先**认领**，
 > 认领撞车时命令返回退出码 3，agent 在动手前就停下来。每个决定、受阻和提交都记进一本
 > **哈希链日志**。**hook** 会把别的工具刚做的事注入正在运行的 Claude Code、Codex 或 Cursor

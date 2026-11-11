@@ -23,7 +23,7 @@ def local_refs(text: str) -> list[str]:
 
 class ReadmeTests(unittest.TestCase):
     def test_first_screen_order(self):
-        order = ["docs/assets/banner.svg", "[!NOTE]", "coworkers who never talk", "## Install",
+        order = ["docs/assets/banner.svg", "[!NOTE]", "none of it reaches the others", "## Install",
                  "Read https://maxont.github.io/aisync/install and install aisync for me.",
                  "curl -fsSL https://maxont.github.io/aisync/install.sh | bash", "docs/assets/demo.gif",
                  "| **Claims** |", "| **Journal** |", "| **Mid-session news** |", "**Dogfooded:** 6,700+ journal events"]
@@ -34,7 +34,7 @@ class ReadmeTests(unittest.TestCase):
         self.assertEqual(table.count("\n| **"), 3)
 
     def test_chinese_readme_mirrors_the_order(self):
-        order = ["docs/assets/banner.zh.svg", "[!NOTE]", "从不交流的同事", "点个 star", "## 安装",
+        order = ["docs/assets/banner.zh.svg", "[!NOTE]", "互相看不见", "点个 star", "## 安装",
                  "install aisync for me.", "install.sh | bash", "docs/assets/demo.zh.gif",
                  "| **认领** |", "| **日志** |", "| **会话中消息** |", "6,700+"]
         pos = [README_ZH.find(s) for s in order]
