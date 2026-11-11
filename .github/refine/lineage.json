@@ -1,7 +1,7 @@
 {
   "repo": "MaxonT/aisync",
   "name": "aisync",
-  "purpose": "one standup for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news for Claude Code, Codex and Cursor",
+  "purpose": "advanced context management for all your AI coding tools: shared rules, a hash-chained journal, file claims and mid-session news for Claude Code, Codex and Cursor",
   "domain": "live coordination between AI tools",
   "tagline": "claims · journal · mid-session news",
   "topics": ["agents", "claude-code", "codex", "cursor", "agents-md", "multi-agent", "cli"],

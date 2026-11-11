@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, board, collab, core, demo, hooks, star_prompt, ui, watch
+from . import __version__, board, collab, core, demo, hooks, ui, watch
 
 DEFAULT_TARGETS = [("claude-code", "~/.claude/CLAUDE.md"),
                    ("codex", "~/.codex/AGENTS.md")]
@@ -541,7 +541,7 @@ class _Root(argparse.ArgumentParser):
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = _Root(prog="aisync", description="One standup for all your AI coding tools.")
+    p = _Root(prog="aisync", description="Advanced context management for all your AI coding tools.")
     p.add_argument("--version", action="version", version=f"aisync {__version__}")
     sub = p.add_subparsers(dest="cmd", parser_class=argparse.ArgumentParser)
 
@@ -696,8 +696,6 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
     code = args.fn(args)
-    if code == 0 and args.cmd != "hook":
-        star_prompt.maybe_ask("MaxonT/aisync", "aisync")
     return code
 
 
