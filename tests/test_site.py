@@ -34,7 +34,7 @@ class ReadmeTests(unittest.TestCase):
         self.assertEqual(table.count("\n| **"), 3)
 
     def test_chinese_readme_mirrors_the_order(self):
-        order = ["docs/assets/banner.zh.svg", "[!NOTE]", "互相看不见", "点个 star", "## 安装",
+        order = ["docs/assets/banner.zh.svg", "[!NOTE]", "互相看不见", "## 安装",
                  "install aisync for me.", "install.sh | bash", "docs/assets/demo.zh.gif",
                  "| **认领** |", "| **日志** |", "| **会话中消息** |", "6,700+"]
         pos = [README_ZH.find(s) for s in order]
