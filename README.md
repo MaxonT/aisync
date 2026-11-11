@@ -2,9 +2,11 @@
 
 <img src="docs/assets/banner.svg" width="100%" alt="aisync: advanced context management for all your AI coding tools"/>
 
-# aisync: advanced context management for all your AI coding agents
+# aisync: shared context, coordination and verification for multi-agent coding
 
-**Claude Code, Codex and Cursor share one context: rules, a journal and file claims, and each one hears what the others did mid-session.**
+**One local hub for developers working with multiple AI coding agents: share the right context, coordinate concurrent work, and verify what happened.**
+
+aisync is **agent-agnostic at its core**. It provides native hooks for Claude Code, Codex and Cursor, and exposes its hub to other agents through a CLI, MCP server, or shared instruction files. These three native integrations are **not** a limit on which agents can use aisync.
 
 [![ci](https://github.com/MaxonT/aisync/actions/workflows/ci.yml/badge.svg)](https://github.com/MaxonT/aisync/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/MaxonT/aisync)](https://github.com/MaxonT/aisync/releases)
@@ -18,15 +20,30 @@
 </div>
 
 > [!NOTE]
-> **Your AI tools each carry their own context, and none of it reaches the others. aisync is the context they all share.**
-> aisync is a **local, verifiable hub** (`~/.ai-sync/`, a git repo). It keeps each tool's rules, habits and
-> live state in one place (who is editing which files, what the other tools just did), and gives a running
-> session only the part it needs.
+> **Multiple coding agents should not have to work with isolated rules, conflicting file ownership, and disconnected histories.**
+> aisync is a **local, verifiable hub** (`~/.ai-sync/`, a git repo) designed for multi-agent workflows:
 >
-> - **Stopped, not just warned:** before editing, an agent **claims** files. An overlapping claim exits with code 3.
-> - **Checkable:** every decision, blocker and commit goes into a **hash-chained journal**. `aisync verify` finds any edit.
-> - **Relevant only:** hooks inject what the other tools just did, and stay silent when nothing changed.
+> - **Context management:** share and 3-way-sync rules; load core context up front and inject relevant context on demand, including mid-session updates where hooks are available.
+> - **Multi-agent coordination:** declare file claims, detect overlapping claims (exit code 3), release ownership, and surface blockers and other agents' activity.
+> - **Observability & verification:** inspect agent activity, blockers, and health through the journal, status reports, and board; `aisync verify` checks the journal's hash chain for tampering.
+>
+> File claims are **cooperative**, not OS-enforced locks: agents must use the claim protocol. Hash-chain verification detects changes to recorded events; it does not prove every claimed action occurred.
 
+
+## Who it's for
+
+Developers running **two or more AI coding agents** across one or multiple repositories—especially when agents work concurrently, hand tasks off, or need a shared record of decisions and blockers. aisync is not another coding agent or a task orchestrator: it is the **shared context and coordination layer** those agents can use.
+
+## Integrations: native hooks are not the compatibility boundary
+
+| Integration | Who can use it | What to expect |
+|---|---|---|
+| **Native hooks** | Claude Code, Codex, Cursor | Automatic context and news delivery at supported hook events, plus access to aisync's coordination and journal commands |
+| **MCP server** | MCP-compatible agents | Exposes rules, rule additions, logging, claims, releases, news, status and tidy; an agent must invoke the tools |
+| **CLI** | Agents that can run shell commands | Direct access to hub operations such as `aisync claim`, `aisync news`, `aisync log` and `aisync verify` |
+| **Shared instruction files** | Agents that read supported instruction files | Standing rules and context only; not automatic mid-session news or file-claim enforcement |
+
+**Compatibility is not equivalent to automatic integration.** For agents without native hooks, features depend on the agent's MCP/CLI usage and configuration. aisync does not automatically intercept all edits or guarantee every agent will honor file claims.
 
 <p align="center"><img src="docs/assets/cli.png" alt="Running aisync in a terminal: a gradient AISYNC pixel logo, then every command grouped as start, every session, look around, keep the rules lean, keep it running" width="720"></p>
 
@@ -55,11 +72,11 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · the same demo hub as a
 [status board](https://maxont.github.io/aisync/board/).</sub>
 
-| | Rules sync tools | aisync |
-|---|---|---|
-| **Claims** | None: two agents can edit the same file at once | `aisync claim` first; an overlap exits with code 3 and says who holds the files |
-| **Journal** | No shared record of who did what | One append-only, hash-chained log of commits, decisions and blockers (`aisync verify`) |
-| **Mid-session news** | Rules load when a session starts, then go quiet | Hooks inject what the other tools just did into the running session |
+| Multi-agent need | What aisync provides |
+|---|---|
+| **Context management** | 3-way-synced rules, layered rule loading and relevant mid-session news via hooks |
+| **Multi-agent coordination** | Cooperative file claims and releases, overlap detection (exit 3), blockers and activity updates |
+| **Observability & verification** | Hash-chained event journal, `aisync verify`, `status`, `report`, `tail` and a static `board` |
 
 aisync also does the rules part: one rules block copied into every tool's own rule file, synced 3-way, conflicts never overwritten.
 
@@ -71,10 +88,10 @@ Keep AGENTS.md for a repo's standing instructions. aisync sits beside it and cov
 
 | | AGENTS.md | aisync |
 |---|---|---|
-| Scope | One file per repo, written by hand | Every AI tool and repo in one hub |
+| Scope | Standing instructions for agents working in a repo | A shared hub across configured agents and repositories |
 | When it is read | When a session starts | At start, and mid-session through hooks |
-| Who is editing what | Not covered | File claims: an overlap exits 3 and the agent stops |
-| Tamper evidence | None | Hash-chained journal: `aisync verify` flags any edit |
+| Who is editing what | Not covered | Cooperative claims: an overlap returns exit 3 to the caller |
+| Tamper evidence | Not provided by the file format | Hash-chained journal: `aisync verify` detects alterations to recorded events |
 | Context per session | Whole file, every time | Triggered rules only: always-loaded rules 20,673 → 7,876 tokens* |
 
 <sub>\* Measured once on one author's own hub (2026-11-08), always-loaded rules before and after layered loading. One machine, not a benchmark: your numbers will differ. `aisync tidy` reports your own rule budget and uncited rules.</sub>
@@ -190,7 +207,7 @@ agent that runs `aisync watch`; create `~/.ai-sync/STOP` to stop it cleanly.
 
 ## Standing on the shoulders of
 
-> aisync: advanced context management for all your AI coding tools. AGENTS.md was the starting idea.
+> aisync: shared context, coordination and verification for multi-agent coding. AGENTS.md was the starting idea.
 
 | Project | How it shaped aisync |
 |---|---|
