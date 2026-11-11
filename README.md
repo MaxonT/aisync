@@ -19,11 +19,13 @@
 
 > [!NOTE]
 > **Your AI tools each carry their own context, and none of it reaches the others. aisync is the context they all share.**
-> Every tool works out of one local hub (`~/.ai-sync/`, a git repo). Before editing, an agent
-> **claims** files, and an overlapping claim exits with code 3, so the agent stops before it collides.
-> Every decision, blocker and commit goes into one **hash-chained journal**. **Hooks** tell a
-> running Claude Code, Codex or Cursor session what the other tools just did, and stay silent when
-> nothing changed.
+> aisync is a **local, verifiable hub** (`~/.ai-sync/`, a git repo). It keeps each tool's rules, habits and
+> live state in one place (who is editing which files, what the other tools just did), and gives a running
+> session only the part it needs.
+>
+> - **Stopped, not just warned:** before editing, an agent **claims** files. An overlapping claim exits with code 3.
+> - **Checkable:** every decision, blocker and commit goes into a **hash-chained journal**. `aisync verify` finds any edit.
+> - **Relevant only:** hooks inject what the other tools just did, and stay silent when nothing changed.
 
 
 <p align="center"><img src="docs/assets/cli.png" alt="Running aisync in a terminal: a gradient AISYNC pixel logo, then every command grouped as start, every session, look around, keep the rules lean, keep it running" width="720"></p>
@@ -62,6 +64,20 @@ Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · t
 aisync also does the rules part: one rules block copied into every tool's own rule file, synced 3-way, conflicts never overwritten.
 
 **Dogfooded:** 6,700+ journal events from 7 AI tools over 4 weeks.
+
+## Why not just AGENTS.md?
+
+Keep AGENTS.md for a repo's standing instructions. aisync sits beside it and covers what a single file cannot: the context that changes while agents work.
+
+| | AGENTS.md | aisync |
+|---|---|---|
+| Scope | One file per repo, written by hand | Every AI tool and repo in one hub |
+| When it is read | When a session starts | At start, and mid-session through hooks |
+| Who is editing what | Not covered | File claims: an overlap exits 3 and the agent stops |
+| Tamper evidence | None | Hash-chained journal: `aisync verify` flags any edit |
+| Context per session | Whole file, every time | Triggered rules only: always-loaded rules 20,673 → 7,876 tokens* |
+
+<sub>\* Measured once on one author's own hub (2026-11-08), always-loaded rules before and after layered loading. One machine, not a benchmark: your numbers will differ. `aisync tidy` reports your own rule budget and uncited rules.</sub>
 
 ## Use it
 
