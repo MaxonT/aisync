@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="docs/assets/banner.svg" width="100%" alt="aisync: one standup for all your AI coding tools"/>
+<img src="docs/assets/banner.svg" width="100%" alt="aisync: advanced context management for all your AI coding tools"/>
 
-# aisync: one standup for all your AI coding agents
+# aisync: advanced context management for all your AI coding agents
 
-**Claude Code, Codex and Cursor share rules, a journal and file claims, and hear what the others did mid-session.**
+**Claude Code, Codex and Cursor share one context: rules, a journal and file claims, and each one hears what the others did mid-session.**
 
 [![ci](https://github.com/MaxonT/aisync/actions/workflows/ci.yml/badge.svg)](https://github.com/MaxonT/aisync/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/MaxonT/aisync)](https://github.com/MaxonT/aisync/releases)
@@ -18,7 +18,7 @@
 </div>
 
 > [!NOTE]
-> **Your AI tools are coworkers who never talk. aisync is their standup.**
+> **Your AI tools each carry their own context, and none of it reaches the others. aisync is the context they all share.**
 > Every tool works out of one local hub (`~/.ai-sync/`, a git repo). Before editing, an agent
 > **claims** files, and an overlapping claim exits with code 3, so the agent stops before it collides.
 > Every decision, blocker and commit goes into one **hash-chained journal**. **Hooks** tell a
