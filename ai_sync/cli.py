@@ -21,7 +21,7 @@ STARTER_BLOCK = """<!-- owner-preferences:start (shared by every AI tool; edit i
 - Every commit ends with an `Agent: <tool>` trailer.
 <!-- owner-preferences:end -->"""
 
-AGENTS_MD = """# AI collaboration hub (aisync)
+AGENTS_MD = """# Context hub (aisync)
 
 Shared entry point for every AI coding tool on this machine (Claude Code, Codex, Cursor, ...).
 Everything lives in `{hub}/`, a local git repo: each change is a commit, so nothing is lost.
