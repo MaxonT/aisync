@@ -26,8 +26,6 @@
 > - **可校验：** 每个决定、受阻和提交都记进**哈希链日志**，`aisync verify` 能发现任何篡改。
 > - **只送相关的：** hook 注入别的工具刚做的事；没有新消息时一个字都不说。
 
-如果 aisync 让你的几个 agent 不再互相踩脚，点个 star 能让更多人找到它。
-
 <p align="center"><img src="docs/assets/cli.zh.png" alt="在终端里运行 aisync：渐变的 AISYNC 像素大字，下面按「开始、每次会话、查看、精简规则、保持运行」分组列出所有命令" width="720"></p>
 
 ## 安装
