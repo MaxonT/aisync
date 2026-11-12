@@ -167,6 +167,11 @@ def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", proje
     if old_plan.get("planned") and (entry or {}).get("judgment_only"):   # a replacement must not drop a planned check
         raise ValueError(f"{old_id} has a planned check ({str(old_plan['planned'])[:80]}); the rule that replaces it "
                          "keeps it: pass --planned \"<the check>\" --size S|M|L, or --enforced-by <path>")
+    if (old_plan.get("planned") and (entry or {}).get("planned")   # nor postpone it: a larger size moves the due day
+            and enforcement.SIZES[entry["size"]] > enforcement.SIZES.get(str(old_plan.get("size", "")), 0)):
+        raise ValueError(f"{old_id} is planned {old_plan.get('size', '?')} since {old_plan.get('since', '?')}; a rule that "
+                         f"replaces it keeps that size (pass --size {old_plan.get('size', 'S')}). To move the due day "
+                         "afterwards: aisync rule enforce <new id> --planned \"<the check>\" --size <larger> --reason \"<why>\"")
     who = agent + (f", {project}" if project else "")
     block = core.extract_block((cfg.root / "preferences.md").read_text()) or ""
     if topics(block):
@@ -196,6 +201,8 @@ def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", proje
             was = enforcement.load(cfg).get(moved_id, {}) if moved_id else {}
             if was.get("planned") and entry.get("planned"):      # the clock of a replaced rule keeps running
                 entry["since"] = min(str(entry["since"]), str(was.get("since") or entry["since"]))
+                if enforcement.SIZES[entry["size"]] > enforcement.SIZES.get(str(was.get("size", "")), 1 << 30):
+                    entry["size"] = was["size"]              # replaced by a piece of its text: the size cannot grow here
             elif was.get("planned") and entry.get("judgment_only"):   # replaced by a piece of its text: leave a trace
                 entry["note"] = (f"replaces {moved_id}, which had a planned check "
                                  f"({was.get('size', '?')}, since {was.get('since', '?')}): {was['planned']}")
