@@ -66,6 +66,8 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 
 ## See it
 
+https://github.com/user-attachments/assets/03d43dc7-ebcf-40ed-b5cd-6cd093a7983d
+
 <p align="center"><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4"><img src="docs/assets/swarm-floor.png" width="360" alt="A 40-second video: a floor of AI agents at work around a tower built from journal events. Click to play."></a><br>
 <sub><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">Watch the 40-second video</a></sub></p>
 
