@@ -141,7 +141,8 @@ def _in_superseded(lines: list[str], i: int) -> bool:
 
 
 def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", project: str = "",
-             topic: str = "", replaces: str = "", enforced_by: str = "", judgment_only: str = "") -> dict:
+             topic: str = "", replaces: str = "", enforced_by: str = "", judgment_only: str = "",
+             planned: str = "", size: str = "") -> dict:
     """Add a shared rule.
 
     Once preferences.md is grouped into topics, the writing standard applies:
@@ -149,8 +150,9 @@ def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", proje
     and move the rule it replaces (by ID or text) into rules-archive.md in the same write. Every new rule
     gets the next free ID. The reason goes to the journal only.
     Before the tidy (no topic headings) it appends to the legacy list as before.
-    A new rule may name what enforces it (enforced_by paths or a judgment_only reason; required with
-    `require_enforcer = true`); it is written to rules-enforcement.toml under the new ID, never into the rules block.
+    A new rule may name what enforces it (enforced_by paths, a judgment_only reason, or the planned check that is
+    not written yet; one of them is required with `require_enforcer = true`); it is written to
+    rules-enforcement.toml under the new ID, never into the rules block.
     """
     from . import enforcement
     agent, text = (agent or "").strip(), " ".join((text or "").split())
@@ -158,8 +160,13 @@ def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", proje
         raise ValueError("agent is required (pass --agent or set AISYNC_AGENT)")
     if len(text) < 8:
         raise ValueError("rule text is too short")
-    entry = (enforcement.check_args(enforced_by, judgment_only)
-             if cfg.require_enforcer or enforced_by or judgment_only else None)   # optional unless require_enforcer
+    entry = (enforcement.check_args(enforced_by, judgment_only, planned, size)
+             if cfg.require_enforcer or enforced_by or judgment_only or planned else None)   # optional unless require_enforcer
+    old_id = ruleids.is_id(replaces) if replaces else None
+    old_plan = enforcement.load(cfg).get(old_id, {}) if old_id else {}
+    if old_plan.get("planned") and (entry or {}).get("judgment_only"):   # a replacement must not drop a planned check
+        raise ValueError(f"{old_id} has a planned check ({str(old_plan['planned'])[:80]}); the rule that replaces it "
+                         "keeps it: pass --planned \"<the check>\" --size S|M|L, or --enforced-by <path>")
     who = agent + (f", {project}" if project else "")
     block = core.extract_block((cfg.root / "preferences.md").read_text()) or ""
     if topics(block):
@@ -185,6 +192,13 @@ def rule_add(cfg: core.Config, *, agent: str, text: str, reason: str = "", proje
         added, bullet, rep = bool(written), written or bullet, {"moved": None}
     if added and entry is not None:
         with core.locked(cfg):
+            moved_id = ruleids.bullet_id(rep["moved"]) if rep.get("moved") else None
+            was = enforcement.load(cfg).get(moved_id, {}) if moved_id else {}
+            if was.get("planned") and entry.get("planned"):      # the clock of a replaced rule keeps running
+                entry["since"] = min(str(entry["since"]), str(was.get("since") or entry["since"]))
+            elif was.get("planned") and entry.get("judgment_only"):   # replaced by a piece of its text: leave a trace
+                entry["note"] = (f"replaces {moved_id}, which had a planned check "
+                                 f"({was.get('size', '?')}, since {was.get('since', '?')}): {was['planned']}")
             enforcement.put(cfg, ruleids.bullet_id(bullet), entry)
     if added:
         why = f" Reason: {' '.join(reason.split())}" if reason.strip() and topics(block) else ""

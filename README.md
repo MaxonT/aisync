@@ -120,6 +120,7 @@ aisync release -a codex -p api
 | `log` | append one event (`dev_log`, `decision`, `blocked`, `unblocked`, `rule_change`, `note`) |
 | `rule add` / `rule list` | any agent adds a shared rule (`--when/--do/--not`, `--topic`, `--replaces R-012`); every tool's copy gets it on the next sync |
 | `rule lint` / `rule rewrite` / `rule enforcement` | rules not in the When/Do/Not shape / rewrite them by ID without losing a fact / which test or hook keeps each rule |
+| `rule enforce` | say what keeps an existing rule: `rule enforce R-012 --enforced-by tests/test_x.py`, `--judgment-only "<why>"`, or `--planned "<the check to write>" --size S\|M\|L` for a check that is possible and not written yet. `rule enforcement` then lists every open one with its next step: an enforcer file that is gone, a plan past its due days (S 7, M 30, L 90), a rule with no plan. A plan's clock only runs: a later date, a larger size or a switch to judgment-only needs `--reason` and stays on record |
 | `tidy` | rules clerk: likely duplicates, rules nobody cited lately, core layer over budget; proposals only, you tick them |
 | `rulecheck` | prove a rules cleanup lost no hard fact (paths, numbers, commands, IDs) |
 | `instinct` | optional habit list grown from past mistakes, injected into every session |
