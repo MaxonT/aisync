@@ -29,7 +29,6 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 >
 > File claims are **cooperative**, not OS-enforced locks: agents must use the claim protocol. Hash-chain verification detects changes to recorded events; it does not prove every claimed action occurred.
 
-
 ## Who it's for
 
 Developers running **two or more AI coding agents** across one or multiple repositories—especially when agents work concurrently, hand tasks off, or need a shared record of decisions and blockers. aisync is not another coding agent or a task orchestrator: it is the **shared context and coordination layer** those agents can use.
@@ -63,9 +62,6 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
-
-
-
 ## See it
 
 <div align="center">
@@ -78,11 +74,17 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 
 </div>
 
+<div align="center">
+
+### Two agents, one file
+
 <img src="docs/assets/demo.gif" width="100%" alt="A real terminal: aisync demo prints a hub's status, claude-code claims app/api/refunds.py, codex claims the same file and is refused with OVERLAP and exit 3, codex logs a blocker, claude-code hears it through aisync news, releases the file, and codex's claim then succeeds"/>
 
 <sub>A real terminal run: `aisync demo` (synthetic data), then two tools reach for the same file.
 Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · the same demo hub as a
 [status board](https://maxont.github.io/aisync/board/).</sub>
+
+</div>
 
 | Multi-agent need | What aisync provides |
 |---|---|
