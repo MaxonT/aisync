@@ -33,6 +33,14 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 
 Developers running **two or more AI coding agents** across one or multiple repositories—especially when agents work concurrently, hand tasks off, or need a shared record of decisions and blockers. aisync is not another coding agent or a task orchestrator: it is the **shared context and coordination layer** those agents can use.
 
+## See it
+
+<div align="center">
+
+### The Agent Swarm Floor
+
+https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
+
 ## Integrations: native hooks are not the compatibility boundary
 
 | Integration | Who can use it | What to expect |
@@ -61,14 +69,6 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 ```
 
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
-
-## See it
-
-<div align="center">
-
-### The Agent Swarm Floor
-
-https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
 
 
 ### Two agents, one file
