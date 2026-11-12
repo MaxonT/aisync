@@ -66,6 +66,9 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 
 ## See it
 
+<p align="center"><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4"><img src="docs/assets/swarm-floor.png" width="360" alt="A 40-second video: a floor of AI agents at work around a tower built from journal events. Click to play."></a><br>
+<sub><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">Watch the 40-second video</a></sub></p>
+
 <img src="docs/assets/demo.gif" width="100%" alt="A real terminal: aisync demo prints a hub's status, claude-code claims app/api/refunds.py, codex claims the same file and is refused with OVERLAP and exit 3, codex logs a blocker, claude-code hears it through aisync news, releases the file, and codex's claim then succeeds"/>
 
 <sub>A real terminal run: `aisync demo` (synthetic data), then two tools reach for the same file.

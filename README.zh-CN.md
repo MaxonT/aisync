@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/banner.zh.svg" width="100%" alt="aisync：给你所有的 AI 编程 agent 做上下文管理"/>
+<img src="docs/assets/banner.zh.svg" width="100%" alt="aisync：多智能体上下文管理、协调与可观测性"/>
 
-# aisync：给你所有的 AI 编程 agent 做上下文管理
+# aisync：多智能体上下文管理、协调与可观测性
 
 **Claude Code、Codex、Cursor 共用一套规则、一本日志和一张“谁在改哪个文件”的认领表，干活途中就能知道别的工具刚做了什么。**
 
@@ -47,6 +47,9 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 第一次成功运行命令后，CLI 会问一次：`Star MaxonT/aisync on GitHub? [y/N]`。默认是不点，以后不会再问；在 CI、管道和脚本里不会出现。回答 y 会用你自己的 `gh` 登录点 star（没装 `gh` 就只打印链接）。设置 `NO_STAR_PROMPT=1` 可以跳过这个问题。
 
 ## 看一眼
+
+<p align="center"><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4"><img src="docs/assets/swarm-floor.zh.png" width="360" alt="40 秒视频：一层楼的 AI agent 围着一座由日志事件堆成的塔干活。点击播放。"></a><br>
+<sub><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">看 40 秒视频</a></sub></p>
 
 <img src="docs/assets/demo.zh.gif" width="100%" alt="真实终端：aisync demo 打印一个 hub 的状态；claude-code 认领 app/api/refunds.py；codex 认领同一个文件，被 OVERLAP 拦下并返回退出码 3；codex 记一条受阻；claude-code 通过 aisync news 得知；释放文件后 codex 认领成功"/>
 
