@@ -50,9 +50,13 @@ class Base(unittest.TestCase):
         os.environ["AISYNC_NO_TIDY"] = "1"       # the cycle's daily tidy never spawns from a test
         os.environ["AISYNC_UNDER_TEST"] = "1"    # children of tests (CLI subprocesses) never execv or spawn either
         # never read the machine's global git config (its core.hooksPath would add Agent trailers)
-        self._git_env = {k: os.environ.get(k) for k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM")}
+        # a CI runner has no git identity; commits made by the code under test (wt land's rebase) need one
+        ident = {"GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.com",
+                 "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.com"}
+        self._git_env = {k: os.environ.get(k) for k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM", *ident)}
         os.environ["GIT_CONFIG_GLOBAL"] = str(self.t / "gitconfig-global")
         os.environ["GIT_CONFIG_NOSYSTEM"] = "1"
+        os.environ.update(ident)
         self.a = self.t / "a.md"
         self.b = self.t / "b.md"
         self.a.write_text(f"# A head\n\n{BLOCK}\n\nA tail\n")
@@ -518,3 +522,28 @@ class SlimCopyTests(Base):
         self.assertIn("more open", section)
         self.assertIn(f"blocker number {core.BLOCKER_DETAIL_MAX + 3}", section)    # the newest are the ones shown
         self.assertNotIn("blocker number 0", section)
+
+
+class StaleLockTests(Base):
+    """2026-11-08: a lock left by a crash (16:23 refs lock, 20:50 index.lock after the kernel panic) failed every
+    commit until cycles paused; git_run now drops a lock older than STALE_LOCK_SECS and retries."""
+
+    def test_old_lock_is_removed_and_git_retried(self):
+        core.ensure_repo(self.cfg)
+        (self.home / "x.md").write_text("x")
+        lock = self.home / ".git" / "index.lock"
+        lock.write_text("")
+        old = time.time() - core.STALE_LOCK_SECS - 5
+        os.utime(lock, (old, old))
+        core.git_run(self.cfg, ["add", "x.md"])
+        self.assertFalse(lock.exists())
+
+    def test_fresh_lock_is_left_alone(self):
+        core.ensure_repo(self.cfg)
+        (self.home / "x.md").write_text("x")
+        lock = self.home / ".git" / "index.lock"
+        lock.write_text("")
+        with self.assertRaises(core.GitError):
+            core.git_run(self.cfg, ["add", "x.md"])
+        self.assertTrue(lock.exists())
+        self.assertFalse(core.clear_stale_lock("some other git error"))

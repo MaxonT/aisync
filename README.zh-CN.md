@@ -169,6 +169,9 @@ core_topics = ["Safety", "Meta"]              # 分层副本里全文保留的�
 instincts_path = ""                           # 可选的习惯文件，会话开始时注入
 tidy_daily = false                            # watcher 每天启动一次 `aisync tidy --write`
 tidy_usage_globs = []                         # 这些文件里出现 R-### 就算这条规则被用过
+gate_hook = false                            # 可选：git pre-push 钩子跑测试闸门（gate.py）
+guard_hook = false                           # 可选：Claude Code 跑“一仓一会话”守卫（guard.py）
+web_inbox_secs = 0                           # 0 = 关闭；否则按这个秒数轮询 web-inbox 分支
 
 [shelf]                                       # 折叠的主题 -> 把它拉进会话的关键词
 Deploys = ["deploy", "terraform", "rollback"]
@@ -181,6 +184,8 @@ layer = "core"                                # 可选：非核心主题折叠�
 
 想让 `aisync watch` 一直运行，可以放进登录项、systemd 用户单元或 launchd agent；创建
 `~/.ai-sync/STOP` 可以让它干净地停下。
+
+**可选功能（默认全部关闭）。** `gate_hook`、`guard_hook`、`web_inbox_secs` 会改变 hub 之外的行为，所以要你自己打开。守卫会拒绝编辑：如果会话被锁住，先运行 `aisync lease status`；确认持锁的会话已经结束后，运行 `aisync lease release --key <repo>`。要撤销守卫，就从 `~/.claude/settings.json` 里删掉命令以 ` guard` 结尾的 `PreToolUse` 和 `SessionEnd` 条目。
 
 ## 站在这些项目的肩膀上
 

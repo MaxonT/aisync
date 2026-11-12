@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PRIVATE = {
     "8bb367a8f3ba87581929", "e63b9641f880cc3335b9", "f15c16b99f82d8201767", "35b70246a19cb878499f",
-    "7b9dd7061d0e07a296d2", "b6463d839a2dd880fbf0", "ce62d6913dfc9149ab9b", "b7b5122e0216692a394b",
+    "7b9dd7061d0e07a296d2", "b6463d839a2dd880fbf0",
     "9aebd569f8d256fe366f", "7d941509db4cf57a351b", "1cb8cc6d49bb9a9982fa", "92f9ed99b93513392b02",
     "70f693250fd960f8a205", "d0a6da933dd33d8e975d",
 }
@@ -28,6 +28,9 @@ PATH_RE = re.compile(r"/Users/\w|/home/(?!runner\b|user\b)\w")
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 PUBLIC_EMAIL = re.compile(r"noreply@|@users\.noreply\.github\.com$|@example\.(com|org)$|^cursoragent@cursor\.com$")
 CJK = re.compile(r"[一-鿿]{2,}")
+# digests (not the names) of author/committer names already shown publicly on the owner's commits
+# (decided 2026-11-11: the name stays, the address is still scanned)
+PUBLIC_AUTHOR_DIGESTS = {"5dd52596b1ac068f8dcf"}
 SKIP_SUFFIX = {".pyc", ".gif", ".png", ".jpg", ".ico", ".whl", ".gz"}
 
 
@@ -116,11 +119,13 @@ def history_items(root: Path, everything: bool = False):
     for entry in filter(str.strip, log.split("\0")):
         head, _, body = entry.partition("\n")
         sha, an, ae, cn, ce = head.split("\x01")
-        people = [f"{an} <{ae}>"]
+        # the owner's public display name on GitHub is not a leak: keep the address scanned, skip the name
+        public = lambda name: digest(name.strip().lower()) in PUBLIC_AUTHOR_DIGESTS
+        people = [f"<{ae}>" if public(an) else f"{an} <{ae}>"]
         # A hosted rebase merge keeps the author and rewrites the committer name to the account's display
         # name (same address, different name). That name comes from the host, not from what we push.
         if not (ce == ae and cn != an):
-            people.append(f"{cn} <{ce}>")
+            people.append(f"<{ce}>" if public(cn) else f"{cn} <{ce}>")
         yield f"commit {sha[:8]}", "\n".join(people) + "\n" + body
 
 
