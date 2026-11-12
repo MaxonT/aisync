@@ -23,14 +23,16 @@ def local_refs(text: str) -> list[str]:
 
 class ReadmeTests(unittest.TestCase):
     def test_first_screen_order(self):
-        order = ["docs/assets/banner.svg", "[!NOTE]", "none of it reaches the others", "## Install",
+        # the first screen as the owner wrote it on 2026-11-02 (multi-agent positioning): banner, note, install, demo, need table
+        order = ["docs/assets/banner.svg", "[!NOTE]", "## Install",
                  "Read https://maxont.github.io/aisync/install and install aisync for me.",
                  "curl -fsSL https://maxont.github.io/aisync/install.sh | bash", "docs/assets/demo.gif",
-                 "| **Claims** |", "| **Journal** |", "| **Mid-session news** |", "**Dogfooded:** 6,700+ journal events"]
+                 "| **Context management** |", "| **Multi-agent coordination** |",
+                 "| **Observability & verification** |", "**Dogfooded:** 6,700+ journal events"]
         pos = [README.find(s) for s in order]
         self.assertNotIn(-1, pos, [s for s, p in zip(order, pos) if p < 0])
         self.assertEqual(pos, sorted(pos))
-        table = README[README.find("| | Rules sync tools"):README.find("aisync also does the rules part")]
+        table = README[README.find("| Multi-agent need"):README.find("aisync also does the rules part")]
         self.assertEqual(table.count("\n| **"), 3)
 
     def test_chinese_readme_mirrors_the_order(self):
