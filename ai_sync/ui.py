@@ -129,10 +129,10 @@ def banner(style: Style, version: str) -> str:
 # Command groups for the front screen; anything not listed lands in "more".
 GROUPS = (
     ("start", ("init", "install-hooks", "demo")),
-    ("every session", ("news", "claim", "release", "log", "rule")),
+    ("every session", ("news", "claim", "release", "log", "rule", "lease", "wt")),
     ("look around", ("status", "claims", "tail", "report", "board", "verify")),
     ("keep the rules lean", ("tidy", "rulecheck", "instinct")),
-    ("keep it running", ("sync", "watch", "resolve", "resume", "hook", "mcp")),
+    ("keep it running", ("sync", "watch", "resolve", "resume", "hook", "mcp", "guard", "gate", "web-inbox")),
 )
 GROUP_COLORS = (PINK, VIOLET, CYAN, AMBER, GREEN, AMBER)
 

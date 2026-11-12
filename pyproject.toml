@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aisync"
-version = "0.2.0"
+version = "0.2.5"
 description = "Advanced context management for all your AI coding tools: shared rules written as When/Do/Not interfaces, a hash-chained journal, file claims, layered rule loading and mid-session news hooks for Claude Code, Codex and Cursor, plus an MCP server for any agent."
 readme = "README.md"
 license = { text = "MIT" }

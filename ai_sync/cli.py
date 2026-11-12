@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, board, collab, core, demo, hooks, ui, watch
+from . import __version__, board, collab, core, demo, hooks, ui, watch, webinbox
 
 DEFAULT_TARGETS = [("claude-code", "~/.claude/CLAUDE.md"),
                    ("codex", "~/.codex/AGENTS.md")]
@@ -340,6 +340,11 @@ def print_status(s: dict, cfg: core.Config) -> None:
     for b in build_open_blocked(cfg):
         print(_paint("BLOCKED ", "1;33") + f" {b['agent']:<12} {b['project'] or '-'}: {core._short(b['summary'], 70)} "
               f"(since {_clock(b['ts'])})")
+    wi = s["web_inbox"]
+    if wi.get("every_secs"):
+        print(f"web-in   every {wi['every_secs']:g}s, {wi.get('imported_total', 0)} imported, last ok "
+              f"{wi.get('last_ok') or '-'}, failures in a row {wi.get('failures', 0)}"
+              f"{'  last error: ' + wi['last_error'] if wi.get('failures') else ''}")
     if s["alerts_file"]:
         print(f"alerts   see {collab._tilde(s['alerts_file'])}")
     print("agents")
@@ -398,6 +403,98 @@ def cmd_hook(a) -> int:
     if out:
         print(out)
     return 0
+
+
+def cmd_guard(a) -> int:
+    """PreToolUse/SessionEnd hook: one Claude Code session per repo. Reads hook JSON; always exits 0."""
+    from . import guard
+    try:
+        raw = sys.stdin.read() if not sys.stdin.isatty() else ""
+        payload = json.loads(raw) if raw.strip() else {}
+    except (ValueError, OSError):
+        payload = {}
+    out = guard.handle(payload if isinstance(payload, dict) else {})
+    if out:
+        print(out)
+    return 0
+
+
+def cmd_lease(a) -> int:
+    from . import guard
+    cfg = core.load_config()
+    if a.action == "status":
+        print(guard.status_text(cfg))
+        return 0
+    if not (a.key or a.session):
+        print("error: release needs --key or --session", file=sys.stderr)
+        return 2
+    gone = guard.release(cfg, key=a.key or "", session=a.session or "")
+    for k in gone:
+        core.append_event(cfg, agent=a.agent or "claude-code", kind="release", project=Path(k).name,
+                          summary=f"session lease released by hand: {k}")
+    print(f"released {len(gone)} lease(s)")
+    return 0
+
+
+def cmd_wt(a) -> int:
+    """`aisync wt start|land --key <repo> --session <id>`: a session's own worktree, one command each way.
+    `land` pushes to main only with --yes; without it, it prints what would land and pushes nothing."""
+    from . import worktree
+    if not (a.key and a.session):
+        print("error: wt needs --key <repo root> and --session <id>", file=sys.stderr)
+        return 2
+    if a.action == "start":
+        ok, out = worktree.start(a.key, a.session)
+        print(out)                                  # stdout stays the bare path, so `cd "$(aisync wt start ...)"` works
+        if ok:
+            print(worktree.NO_STASH, file=sys.stderr)
+        return 0 if ok else 1
+    if not a.yes:
+        wt = worktree.path_for(a.key, a.session)
+        if not wt.exists():
+            print(f"no worktree at {wt} (run aisync wt start first)", file=sys.stderr)
+            return 1
+        print(f"dry run, nothing pushed: {wt} (branch {worktree.branch_for(a.session)}) would land on main. "
+              f"Re-run with --yes to land.")
+        return 0
+    ok, msg = worktree.land(a.key, a.session)
+    print(msg)
+    return 0 if ok else 1
+
+
+def cmd_gate(a) -> int:
+    """`aisync gate pre-push <remote> <url>` (called by the git hook, refs on stdin) or `aisync gate check`."""
+    from . import gate
+    if a.action == "pre-push":
+        rc = gate.pre_push(Path.cwd(), a.remote or "origin", sys.stdin.read().splitlines(),
+                           say=lambda m: print(m, file=sys.stderr))
+        return gate.REFUSED if rc else 0   # the hook tells a refusal (10) from the gate itself crashing
+    sha = subprocess.run(["git", "-C", a.repo, "rev-parse", a.sha], capture_output=True, text=True).stdout.strip()
+    if not sha:
+        print(f"error: cannot resolve {a.sha} in {a.repo}", file=sys.stderr)
+        return 2
+    ok, out, secs = gate.check_commit(Path(a.repo), sha)
+    print(out if not ok else f"passed in {secs:.0f}s")
+    return 0 if ok else 1
+
+
+def cmd_web_inbox(a) -> int:
+    cfg = core.load_config()
+    rec = webinbox.poll(cfg, do_fetch=not a.no_fetch)
+    if a.json:
+        print(json.dumps(rec, ensure_ascii=False, indent=2))
+    elif rec["ok"]:
+        print(f"web-inbox: {rec['lines']} line(s), imported {len(rec['imported'])}, already {rec['already']}, "
+              f"rejected {len(rec['rejected'])} ({rec['ms']} ms)")
+        for i in rec["imported"]:
+            print(f"  logged {i['id']} ({i.get('agent', webinbox.AGENT)}, web_id {i['web_id']})")
+        for m in rec["kind_mapped"]:
+            print(f"  kind mapped: {m}")
+        for why in rec["rejected"]:
+            print(f"  rejected: {why}", file=sys.stderr)
+    else:
+        print(f"web-inbox FAILED ({rec['failures']} in a row): {rec['error']}", file=sys.stderr)
+    return 0 if rec["ok"] else 1
 
 
 def cmd_install_hooks(a) -> int:
@@ -637,6 +734,36 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("tool", choices=("claude-code", "codex", "cursor"))
     s.add_argument("--event", help="hook event name when the tool does not send one")
     s.set_defaults(fn=cmd_hook)
+
+    s = sub.add_parser("guard", help="Claude Code PreToolUse/SessionEnd hook: one session per repo (stdin JSON)")
+    s.set_defaults(fn=cmd_guard)
+
+    s = sub.add_parser("lease", help="session leases held by the guard: status, or release one")
+    s.add_argument("action", choices=("status", "release"))
+    s.add_argument("--key", help="repo root (or file) path as shown by `lease status`")
+    s.add_argument("--session", help="session id (prefix not accepted)")
+    s.add_argument("--agent", "-a")
+    s.set_defaults(fn=cmd_lease)
+
+    s = sub.add_parser("wt", help="this session's own worktree: `wt start` opens it, `wt land` lands it (needs --yes)")
+    s.add_argument("action", choices=("start", "land"))
+    s.add_argument("--key", help="repo root whose main checkout is leased")
+    s.add_argument("--session", help="your Claude Code session id (full id)")
+    s.add_argument("--yes", action="store_true", help="land: really push to main (without it, a dry run)")
+    s.set_defaults(fn=cmd_wt)
+
+    s = sub.add_parser("gate", help="push-time test gate: `gate pre-push` (git hook) or `gate check` a commit")
+    s.add_argument("action", choices=("pre-push", "check"))
+    s.add_argument("remote", nargs="?", help="pre-push: remote name (from git)")
+    s.add_argument("url", nargs="?", help="pre-push: remote url (from git)")
+    s.add_argument("--repo", default=".", help="check: repo path")
+    s.add_argument("--sha", default="HEAD", help="check: commit to test on a clean checkout")
+    s.set_defaults(fn=cmd_gate)
+
+    s = sub.add_parser("web-inbox", help="import web-Claude events from the web-inbox branch now (read-only fetch)")
+    s.add_argument("--no-fetch", action="store_true", help="use the last fetched copy, no network")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(fn=cmd_web_inbox)
 
     s = sub.add_parser("install-hooks", help="wire news hooks into Claude Code/Codex/Cursor, rules blocks, git Agent "
                                              "trailer (shows a diff and asks first)")
