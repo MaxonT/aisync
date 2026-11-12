@@ -64,6 +64,10 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
 
+
+https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d
+
+
 ## See it
 
 <div align="center">
