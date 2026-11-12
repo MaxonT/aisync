@@ -8,6 +8,9 @@
 
 aisync is **agent-agnostic at its core**. It provides native hooks for Claude Code, Codex and Cursor, and exposes its hub to other agents through a CLI, MCP server, or shared instruction files. These three native integrations are **not** a limit on which agents can use aisync.
 
+https://github.com/user-attachments/assets/03d43dc7-ebcf-40ed-b5cd-6cd093a7983d
+
+
 [![ci](https://github.com/MaxonT/aisync/actions/workflows/ci.yml/badge.svg)](https://github.com/MaxonT/aisync/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/MaxonT/aisync)](https://github.com/MaxonT/aisync/releases)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
