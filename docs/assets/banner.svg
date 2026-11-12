@@ -12,15 +12,18 @@
   <text x="80" y="218" font-family="'Segoe UI',system-ui,sans-serif" font-size="28" font-weight="600" fill="#c9d1d9">Context management for all your AI coding tools</text>
   <text x="80" y="262" font-family="'SF Mono',ui-monospace,monospace" font-size="20" fill="#60a5fa">claims · hash-chained journal · mid-session news</text>
   <circle cx="1010" cy="175" r="120" fill="none" stroke="#2a2f6e" stroke-width="1.2" stroke-dasharray="4 6" opacity="0.7"/>
-  <line x1="1010" y1="175" x2="1010" y2="55" stroke="#5D67F7" stroke-width="1.5" opacity="0.75"/>
-  <line x1="1010" y1="175" x2="1113.9" y2="235" stroke="#5D67F7" stroke-width="1.5" opacity="0.75"/>
-  <line x1="1010" y1="175" x2="906.1" y2="235" stroke="#5D67F7" stroke-width="1.5" opacity="0.75"/>
-  <circle cx="1010" cy="175" r="33.6" fill="#2a2f6e" stroke="#60a5fa" stroke-width="2"/>
+  <line x1="1010" y1="175" x2="1010" y2="55" stroke="#4f5fd8" stroke-width="1.5" opacity="0.75"/>
+  <line x1="1010" y1="175" x2="1113.9" y2="235" stroke="#4f5fd8" stroke-width="1.5" opacity="0.75"/>
+  <line x1="1010" y1="175" x2="906.1" y2="235" stroke="#4f5fd8" stroke-width="1.5" opacity="0.75"/>
+  <circle cx="1010" cy="175" r="33.6" fill="#2a2f6e" stroke="#5D67F7" stroke-width="2"/>
   <circle cx="1010" cy="175" r="9.6" fill="#e0e7ff"/>
-  <rect x="935" y="36" width="150" height="38" rx="10" fill="#161b22" stroke="#60a5fa" stroke-width="1.2"/>
-  <text x="1010" y="61.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#e0e7ff">Claude Code</text>
-  <rect x="1038.9" y="216" width="150" height="38" rx="10" fill="#161b22" stroke="#60a5fa" stroke-width="1.2"/>
-  <text x="1113.9" y="241.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#e0e7ff">Codex</text>
-  <rect x="831.1" y="216" width="150" height="38" rx="10" fill="#161b22" stroke="#60a5fa" stroke-width="1.2"/>
-  <text x="906.1" y="241.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#e0e7ff">Cursor</text>
+  <rect x="918" y="35" width="184" height="40" rx="10" fill="#161b22" stroke="#5D67F7" stroke-width="1.2"/>
+  <g transform="translate(939 55) scale(0.650)"><line x1="0" y1="-12" x2="0" y2="-18" stroke="#818cf8" stroke-width="1.5"/><circle cx="0" cy="-19" r="2.5" fill="#5D67F7"/><rect x="-14" y="-12" width="28" height="24" rx="8" fill="#2a2f6e" stroke="#818cf8" stroke-width="1.5"/><circle cx="-6" cy="-2" r="3" fill="#e0e7ff"/><circle cx="6" cy="-2" r="3" fill="#e0e7ff"/><path d="M-5 5 Q0 9 5 5" fill="none" stroke="#a5b4fc" stroke-width="1.5" stroke-linecap="round"/><rect x="-9" y="12" width="4" height="5" rx="1" fill="#818cf8"/><rect x="5" y="12" width="4" height="5" rx="1" fill="#818cf8"/></g>
+  <text x="962" y="60.8" font-family="'SF Mono',ui-monospace,monospace" font-size="16" fill="#e0e7ff">Claude Code</text>
+  <rect x="1021.9" y="215" width="184" height="40" rx="10" fill="#161b22" stroke="#5D67F7" stroke-width="1.2"/>
+  <g transform="translate(1042.9 235) scale(0.650)"><rect x="-14" y="-14" width="28" height="28" rx="7" fill="#2a2f6e" stroke="#5D67F7" stroke-width="1.5"/><path d="M-7 -4 L-2 0 L-7 4" fill="none" stroke="#e0e7ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="1" y1="5" x2="8" y2="5" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round"/></g>
+  <text x="1065.9" y="240.8" font-family="'SF Mono',ui-monospace,monospace" font-size="16" fill="#e0e7ff">Codex</text>
+  <rect x="814.1" y="215" width="184" height="40" rx="10" fill="#161b22" stroke="#5D67F7" stroke-width="1.2"/>
+  <g transform="translate(835.1 235) scale(0.650)"><path d="M-12 -14 L13 -2 L4 1 L1 13 Z" fill="#5D67F7" stroke="#c7d2fe" stroke-width="1.5" stroke-linejoin="round"/><circle cx="-2" cy="-3" r="2" fill="#0d1117"/><circle cx="3" cy="-1" r="2" fill="#0d1117"/></g>
+  <text x="858.1" y="240.8" font-family="'SF Mono',ui-monospace,monospace" font-size="16" fill="#e0e7ff">Cursor</text>
 </svg>
