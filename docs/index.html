@@ -8,10 +8,10 @@ How: GitHub Pages from /docs; plain HTML and CSS, no scripts, no requests to oth
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>aisync: advanced context management for all your AI coding tools</title>
-<meta name="description" content="Each AI tool carries its own context; aisync is the advanced context management they share. File claims, a hash-chained journal and mid-session news hooks for Claude Code, Codex and Cursor. Python stdlib only.">
+<title>aisync: Multi-Agent Context Management, Coordination &amp; Observability</title>
+<meta name="description" content="One local hub for developers working with multiple AI coding agents: share the right context, coordinate concurrent work, and verify what happened. File claims, a hash-chained journal and mid-session news hooks for Claude Code, Codex and Cursor. Python stdlib only.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="aisync: advanced context management for all your AI coding tools">
+<meta property="og:title" content="aisync: Multi-Agent Context Management, Coordination &amp; Observability">
 <meta property="og:description" content="File claims, a hash-chained journal and mid-session news hooks for Claude Code, Codex and Cursor.">
 <meta property="og:url" content="https://maxont.github.io/aisync/">
 <meta property="og:image" content="https://maxont.github.io/aisync/assets/og.png">
@@ -56,11 +56,14 @@ footer{margin-top:56px;color:var(--muted);font-size:14px}
 <div class="wrap">
 <nav><a class="brand" href="./">aisync</a><a href="install/">Install</a><a href="how-it-works/">How it works</a><a href="board/">Demo board</a><a href="https://github.com/MaxonT/aisync">GitHub</a></nav>
 
-<img class="banner" src="assets/banner.svg" alt="aisync: advanced context management for all your AI coding tools">
+<img class="banner" src="assets/banner.svg" alt="aisync: Multi-Agent Context Management, Coordination &amp; Observability">
 
-<h1>Your AI tools each carry their own context. aisync is the context they share.</h1>
-<p class="lead">Claude Code, Codex and Cursor share one set of rules, one journal and one list of who is editing what, and hear what the others did while they work.</p>
+<h1>Multi-Agent Context Management, Coordination &amp; Observability</h1>
+<p class="lead">One local hub for developers working with multiple AI coding agents: share the right context, coordinate concurrent work, and verify what happened. Native hooks for Claude Code, Codex and Cursor; other agents connect through the CLI or MCP server.</p>
 <div class="cta"><a class="btn" href="install/">Install</a><a class="btn ghost" href="board/">See the demo board</a><a href="https://github.com/MaxonT/aisync">Source on GitHub</a></div>
+
+<h2>Watch the 40-second video</h2>
+<video class="media" controls preload="metadata" poster="assets/swarm-floor.png" src="assets/swarm-floor.mp4" style="max-width:420px;margin-left:auto;margin-right:auto"></video>
 
 <h2>Two tools reach for the same file</h2>
 <img class="media" src="assets/demo.gif" alt="A real terminal: aisync demo prints a hub's status, claude-code claims app/api/refunds.py, codex claims the same file and is refused with OVERLAP and exit 3, codex logs a blocker, claude-code hears it, releases the file, and codex's claim succeeds">
