@@ -58,11 +58,17 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 </div>
 
+<div align="center">
+
+### 两个 agent，同一个文件
+
 <img src="docs/assets/demo.zh.gif" width="100%" alt="真实终端：aisync demo 打印一个 hub 的状态；claude-code 认领 app/api/refunds.py；codex 认领同一个文件，被 OVERLAP 拦下并返回退出码 3；codex 记一条受阻；claude-code 通过 aisync news 得知；释放文件后 codex 认领成功"/>
 
 <sub>真实终端录屏：先 `aisync demo`（合成数据），再看两个工具同时伸手去改一个文件。
 逐步讲解：[工作原理](https://maxont.github.io/aisync/how-it-works/zh.html) · 同一个演示 hub 的
 [状态看板](https://maxont.github.io/aisync/board/)（英文页面）。</sub>
+
+</div>
 
 | | 规则同步工具 | aisync |
 |---|---|---|
