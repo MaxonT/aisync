@@ -675,7 +675,7 @@ class _Root(argparse.ArgumentParser):
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = _Root(prog="aisync", description="Advanced context management for all your AI coding tools.")
+    p = _Root(prog="aisync", description="Multi-Agent Context Management, Coordination & Observability.")
     p.add_argument("--version", action="version", version=f"aisync {__version__}")
     sub = p.add_subparsers(dest="cmd", parser_class=argparse.ArgumentParser)
 
