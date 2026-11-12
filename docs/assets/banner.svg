@@ -1,24 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="340" viewBox="0 0 1280 340" role="img" aria-label="aisync">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d1117"/><stop offset="1" stop-color="#0a0e14"/></linearGradient>
-    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfe8ff"/><stop offset="0.6" stop-color="#56a2ff"/><stop offset="1" stop-color="#3b82c4"/></linearGradient>
-    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#56a2ff" stop-opacity="0.9"/><stop offset="1" stop-color="#3b82c4" stop-opacity="0"/></linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e0e7ff"/><stop offset="0.5" stop-color="#818cf8"/><stop offset="1" stop-color="#0866FF"/></linearGradient>
+    <radialGradient id="glow" cx="0.78" cy="0.45" r="0.55"><stop offset="0" stop-color="#5D67F7" stop-opacity="0.35"/><stop offset="1" stop-color="#0866FF" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5D67F7" stop-opacity="1"/><stop offset="1" stop-color="#0866FF" stop-opacity="0"/></linearGradient>
   </defs>
   <rect width="1280" height="340" fill="url(#bg)"/>
+  <rect width="1280" height="340" fill="url(#glow)"/>
   <text x="80" y="150" font-family="'Segoe UI',system-ui,-apple-system,sans-serif" font-size="96" font-weight="800" fill="url(#word)" letter-spacing="-1">aisync</text>
   <rect x="82" y="172" width="360" height="3" rx="1.5" fill="url(#rule)"/>
   <text x="80" y="218" font-family="'Segoe UI',system-ui,sans-serif" font-size="28" font-weight="600" fill="#c9d1d9">Context management for all your AI coding tools</text>
-  <text x="80" y="262" font-family="'SF Mono',ui-monospace,monospace" font-size="20" fill="#56a2ff">claims · hash-chained journal · mid-session news</text>
-  <circle cx="1010" cy="175" r="120" fill="none" stroke="#1e3a5f" stroke-width="1.2" stroke-dasharray="4 6" opacity="0.7"/>
-  <line x1="1010" y1="175" x2="1010" y2="55" stroke="#3b82c4" stroke-width="1.5" opacity="0.75"/>
-  <line x1="1010" y1="175" x2="1113.9" y2="235" stroke="#3b82c4" stroke-width="1.5" opacity="0.75"/>
-  <line x1="1010" y1="175" x2="906.1" y2="235" stroke="#3b82c4" stroke-width="1.5" opacity="0.75"/>
-  <circle cx="1010" cy="175" r="33.6" fill="#1e3a5f" stroke="#56a2ff" stroke-width="2"/>
-  <circle cx="1010" cy="175" r="9.6" fill="#cfe8ff"/>
-  <rect x="935" y="36" width="150" height="38" rx="10" fill="#161b22" stroke="#56a2ff" stroke-width="1.2"/>
-  <text x="1010" y="61.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#cfe8ff">Claude Code</text>
-  <rect x="1038.9" y="216" width="150" height="38" rx="10" fill="#161b22" stroke="#56a2ff" stroke-width="1.2"/>
-  <text x="1113.9" y="241.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#cfe8ff">Codex</text>
-  <rect x="831.1" y="216" width="150" height="38" rx="10" fill="#161b22" stroke="#56a2ff" stroke-width="1.2"/>
-  <text x="906.1" y="241.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#cfe8ff">Cursor</text>
+  <text x="80" y="262" font-family="'SF Mono',ui-monospace,monospace" font-size="20" fill="#60a5fa">claims · hash-chained journal · mid-session news</text>
+  <circle cx="1010" cy="175" r="120" fill="none" stroke="#2a2f6e" stroke-width="1.2" stroke-dasharray="4 6" opacity="0.7"/>
+  <line x1="1010" y1="175" x2="1010" y2="55" stroke="#5D67F7" stroke-width="1.5" opacity="0.75"/>
+  <line x1="1010" y1="175" x2="1113.9" y2="235" stroke="#5D67F7" stroke-width="1.5" opacity="0.75"/>
+  <line x1="1010" y1="175" x2="906.1" y2="235" stroke="#5D67F7" stroke-width="1.5" opacity="0.75"/>
+  <circle cx="1010" cy="175" r="33.6" fill="#2a2f6e" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="1010" cy="175" r="9.6" fill="#e0e7ff"/>
+  <rect x="935" y="36" width="150" height="38" rx="10" fill="#161b22" stroke="#60a5fa" stroke-width="1.2"/>
+  <text x="1010" y="61.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#e0e7ff">Claude Code</text>
+  <rect x="1038.9" y="216" width="150" height="38" rx="10" fill="#161b22" stroke="#60a5fa" stroke-width="1.2"/>
+  <text x="1113.9" y="241.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#e0e7ff">Codex</text>
+  <rect x="831.1" y="216" width="150" height="38" rx="10" fill="#161b22" stroke="#60a5fa" stroke-width="1.2"/>
+  <text x="906.1" y="241.1" text-anchor="middle" font-family="'SF Mono',ui-monospace,monospace" font-size="17" fill="#e0e7ff">Cursor</text>
 </svg>
