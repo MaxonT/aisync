@@ -123,6 +123,11 @@ aisync release -a codex -p api
 | `tidy` | rules clerk: likely duplicates, rules nobody cited lately, core layer over budget; proposals only, you tick them |
 | `rulecheck` | prove a rules cleanup lost no hard fact (paths, numbers, commands, IDs) |
 | `instinct` | optional habit list grown from past mistakes, injected into every session |
+| `gate` | push-time test gate: `gate check` runs `./check.sh --fast` on a commit; the git pre-push hook calls `gate pre-push` (opt-in, see below) |
+| `web-inbox` | import web-Claude events from the `web-inbox` branch now (`--no-fetch` uses the last fetched copy) |
+| `guard` | Claude Code hook: one session per repo; denies an edit when another session holds the repo (opt-in, see below) |
+| `lease` | who holds which repo (`lease status`), or free one by hand (`lease release --key`) |
+| `wt` | a session's own git worktree: `wt start` opens it; `wt land` lands it on main and needs `--yes` (without it: a dry run) |
 | `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync[mcp]'`) |
 | `claim` / `release` / `claims` | who is working on which files right now; overlap = exit 3 |
 | `news` | what other tools did since this session last looked |
@@ -192,6 +197,9 @@ core_topics = ["Safety", "Meta"]              # topic headings a layered copy ca
 instincts_path = ""                           # optional habit file injected at session start
 tidy_daily = false                            # the watcher starts one `aisync tidy --write` a day
 tidy_usage_globs = []                         # files whose R-### mentions count as a rule being used
+gate_hook = false                            # opt-in: the git pre-push hook runs the test gate (gate.py)
+guard_hook = false                           # opt-in: Claude Code runs the one-session-per-repo guard (guard.py)
+web_inbox_secs = 0                           # 0 = off; else poll the web-inbox branch this often
 
 [shelf]                                       # folded topic -> keywords that pull it into a session
 Deploys = ["deploy", "terraform", "rollback"]
@@ -204,6 +212,11 @@ layer = "core"                                # optional: fold non-core topics, 
 
 To keep `aisync watch` running, start it from your login items, a systemd user unit or a launchd
 agent that runs `aisync watch`; create `~/.ai-sync/STOP` to stop it cleanly.
+
+**Opt-in features (all off by default).** `gate_hook`, `guard_hook` and `web_inbox_secs` change behavior outside the hub,
+so nothing turns on until you set them. The guard can deny edits: if a session is locked out, run
+`aisync lease status`, and once the holder session has ended, `aisync lease release --key <repo>`. To undo the guard,
+delete the `PreToolUse` and `SessionEnd` entries whose command ends in ` guard` from `~/.claude/settings.json`.
 
 ## Standing on the shoulders of
 

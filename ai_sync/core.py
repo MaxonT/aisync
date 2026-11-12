@@ -93,6 +93,11 @@ class Config:
     rule_sources: list[str] = field(default_factory=list)  # repos whose AGENTS.md "Meta rule" feeds the shared rules
     progress_targets: list[ProgressTarget] = field(default_factory=list)  # files tools auto-load
     roster: list[str] = field(default_factory=lambda: list(DEFAULT_ROSTER))  # tools `report` expects to hear from
+    web_inbox_secs: float = 0.0          # poll the web-inbox branch this often; 0 = off (webinbox.py)
+    web_inbox_remote: str = "origin"
+    web_inbox_branch: str = "web-inbox"
+    gate_hook: bool = False              # install the push-time test gate in the git pre-push hook (gate.py); off by default
+    guard_hook: bool = False             # wire the one-session-per-repo guard (guard.py) into Claude Code; off by default
     instincts_path: str = ""             # optional habit list the hooks inject (one line each); empty = off
     errors_path: str = ""                # optional error log the habits cite; empty = off
     rule_spec: bool = False              # rule add refuses a rule not in the When/Do/Not shape (rulespec.py)
@@ -127,7 +132,8 @@ def project_list(cfg: "Config") -> list[Path]:
 TIDY_GLOBS: tuple[str, ...] = ()     # no transcript scan unless config sets tidy_usage_globs (e.g. "~/.claude/projects/*/*.jsonl")
 
 _NUM_KEYS = ("debounce_secs", "max_wait_secs", "min_flush_interval_secs", "reconcile_secs",
-             "git_timeout_secs", "git_retries", "backoff_base_secs", "fail_threshold", "core_budget_chars")
+             "git_timeout_secs", "git_retries", "backoff_base_secs", "fail_threshold", "web_inbox_secs",
+             "core_budget_chars")
 
 
 def load_config(root: Path | None = None) -> Config:
@@ -135,7 +141,8 @@ def load_config(root: Path | None = None) -> Config:
     cfg = Config(root=root)
     path = root / "config.toml"
     data = tomllib.loads(path.read_text()) if path.exists() else {}
-    for key in _NUM_KEYS + ("remote", "remote_branch", "instincts_path", "errors_path", "progress_file"):
+    for key in _NUM_KEYS + ("remote", "remote_branch", "web_inbox_remote", "web_inbox_branch",
+                            "instincts_path", "errors_path", "progress_file"):
         if key in data:
             setattr(cfg, key, data[key])
     cfg.targets = [Target(t["label"], Path(t["path"]).expanduser(), bool(t.get("slim", False)), str(t.get("layer", "")))
@@ -143,6 +150,8 @@ def load_config(root: Path | None = None) -> Config:
     cfg.core_topics = list(data.get("core_topics", []))
     cfg.shelf = {k: list(v) for k, v in data.get("shelf", {}).items()}
     cfg.tidy_daily = bool(data.get("tidy_daily", False))
+    cfg.gate_hook = bool(data.get("gate_hook", False))
+    cfg.guard_hook = bool(data.get("guard_hook", False))
     if "tidy_usage_globs" in data:
         cfg.tidy_usage_globs = list(data["tidy_usage_globs"])
     cfg.projects = [Path(p["path"]).expanduser() for p in data.get("project", [])]
@@ -742,6 +751,25 @@ def read_runs(cfg: Config, n: int = 50) -> list[dict]:
 
 # ───────────────────────────── git flush ─────────────────────────────
 
+STALE_LOCK_SECS = 600     # git holds a lock for seconds; a lock this old was left by a crash (twice on 2026-11-08)
+_LOCK_RE = re.compile(r"Unable to create '([^']+\.lock)': File exists")
+
+
+def clear_stale_lock(err: str) -> bool:
+    """Remove the lock git complains about when it is older than STALE_LOCK_SECS; True when one was removed."""
+    m = _LOCK_RE.search(err or "")
+    if not m:
+        return False
+    p = Path(m.group(1))
+    try:
+        if time.time() - p.stat().st_mtime < STALE_LOCK_SECS:
+            return False
+        p.unlink()
+    except OSError:
+        return False
+    return True
+
+
 def git_run(cfg: Config, args: list[str], retries: int = 1) -> subprocess.CompletedProcess:
     """Timeout on every call; exponential backoff between attempts."""
     err = ""
@@ -751,6 +779,11 @@ def git_run(cfg: Config, args: list[str], retries: int = 1) -> subprocess.Comple
             if r.returncode == 0:
                 return r
             err = (r.stderr or r.stdout).strip()[:300]
+            if clear_stale_lock(err):              # a crash left the lock: drop it and try again at once
+                r = _git(args, cfg.root, cfg.git_timeout_secs)
+                if r.returncode == 0:
+                    return r
+                err = (r.stderr or r.stdout).strip()[:300]
         except subprocess.TimeoutExpired:
             err = f"timeout after {cfg.git_timeout_secs}s"
         if attempt < retries - 1:
@@ -813,7 +846,8 @@ def run_cycle(cfg: Config, reason: str = "manual") -> dict:
     rec = {"ts": now_iso(), "reason": reason, "steps": {}}
     from . import collab, ruleids
     steps = (("harvest", harvest), ("rules", collab.harvest_rules), ("ids", ruleids.normalize), ("distribute", distribute),
-             ("render", render), ("progress", collab.render_progress), ("tidy", tidy_kick), ("flush", flush))
+             ("render", render), ("progress", collab.render_progress), ("tidy", tidy_kick),
+             ("flush", flush))
     for name, fn in steps:
         s = time.monotonic()
         try:
@@ -846,6 +880,8 @@ def run_cycle(cfg: Config, reason: str = "manual") -> dict:
 
 
 # ───────────────────────────── status ─────────────────────────────
+
+
 
 def under_test() -> bool:
     """pytest, plain `python -m unittest`, or a test-launched child (AISYNC_UNDER_TEST); a real hub process imports none."""
@@ -923,6 +959,8 @@ def status(cfg: Config) -> dict:
                                            for r in runs),
                     "last_cycle": runs[-1] if runs else None},
         "alerts_file": str(cfg.state / "ALERT.md") if (cfg.state / "ALERT.md").exists() else None,
+        "web_inbox": {k: v for k, v in load_json(cfg.state / "web_inbox.json", {}).items()
+                      if k not in ("seen", "rejected")} | {"every_secs": cfg.web_inbox_secs},
         # non-vacuous: what this status really looked at; 0 of any is a failure in `aisync status`
         "checked": {"journal events": len(events), "rule copies": len(targets),
                     "rule block lines": sum(1 for ln in (truth or "").splitlines()[1:-1] if ln.strip())},
