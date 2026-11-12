@@ -50,9 +50,13 @@ class Base(unittest.TestCase):
         os.environ["AISYNC_NO_TIDY"] = "1"       # the cycle's daily tidy never spawns from a test
         os.environ["AISYNC_UNDER_TEST"] = "1"    # children of tests (CLI subprocesses) never execv or spawn either
         # never read the machine's global git config (its core.hooksPath would add Agent trailers)
-        self._git_env = {k: os.environ.get(k) for k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM")}
+        # a CI runner has no git identity; commits made by the code under test (wt land's rebase) need one
+        ident = {"GIT_AUTHOR_NAME": "test", "GIT_AUTHOR_EMAIL": "test@example.com",
+                 "GIT_COMMITTER_NAME": "test", "GIT_COMMITTER_EMAIL": "test@example.com"}
+        self._git_env = {k: os.environ.get(k) for k in ("GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM", *ident)}
         os.environ["GIT_CONFIG_GLOBAL"] = str(self.t / "gitconfig-global")
         os.environ["GIT_CONFIG_NOSYSTEM"] = "1"
+        os.environ.update(ident)
         self.a = self.t / "a.md"
         self.b = self.t / "b.md"
         self.a.write_text(f"# A head\n\n{BLOCK}\n\nA tail\n")
