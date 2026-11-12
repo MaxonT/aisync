@@ -74,7 +74,7 @@ https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d
 
 ### The Agent Swarm Floor
 
-<video src="https://github.com/user-attachments/assets/03d43dc7-ebcf-40ed-b5cd-6cd093a7983d" width="360" controls></video>
+<video src="https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d" width="360" controls></video>
 
 <sub>42 seconds · an illustration with synthetic data · sound on</sub>
 

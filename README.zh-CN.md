@@ -52,7 +52,7 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 ### The Agent Swarm Floor：一层楼的 agent 在协作
 
-<video src="https://github.com/user-attachments/assets/03d43dc7-ebcf-40ed-b5cd-6cd093a7983d" width="360" controls></video>
+<video src="https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d" width="360" controls></video>
 
 <sub>42 秒 · 示意动画，数据为合成演示 · 建议打开声音</sub>
 
