@@ -68,15 +68,8 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 
 ### The Agent Swarm Floor
 
-<video src="https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73" width="360" controls></video>
+https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
 
-
-
-<sub>42 seconds · an illustration with synthetic data · sound on</sub>
-
-</div>
-
-<div align="center">
 
 ### Two agents, one file
 
