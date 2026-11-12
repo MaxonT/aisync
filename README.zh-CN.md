@@ -48,8 +48,15 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 ## 看一眼
 
-<p align="center"><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4"><img src="docs/assets/swarm-floor.zh.png" width="360" alt="40 秒视频：一层楼的 AI agent 围着一座由日志事件堆成的塔干活。点击播放。"></a><br>
-<sub><a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">看 40 秒视频</a></sub></p>
+<div align="center">
+
+### The Agent Swarm Floor：一层楼的 agent 在协作
+
+<video src="https://github.com/user-attachments/assets/03d43dc7-ebcf-40ed-b5cd-6cd093a7983d" width="360" controls></video>
+
+<sub>42 秒 · 示意动画，数据为合成演示 · 建议打开声音</sub>
+
+</div>
 
 <img src="docs/assets/demo.zh.gif" width="100%" alt="真实终端：aisync demo 打印一个 hub 的状态；claude-code 认领 app/api/refunds.py；codex 认领同一个文件，被 OVERLAP 拦下并返回退出码 3；codex 记一条受阻；claude-code 通过 aisync news 得知；释放文件后 codex 认领成功"/>
 
