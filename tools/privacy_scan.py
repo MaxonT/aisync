@@ -31,7 +31,7 @@ CJK = re.compile(r"[一-鿿]{2,}")
 # digests (not the names) of author/committer names already shown publicly on the owner's commits
 # (decided 2026-11-11: the name stays, the address is still scanned)
 PUBLIC_AUTHOR_DIGESTS = {"5dd52596b1ac068f8dcf"}
-SKIP_SUFFIX = {".pyc", ".gif", ".png", ".jpg", ".ico", ".whl", ".gz"}
+SKIP_SUFFIX = {".pyc", ".gif", ".png", ".jpg", ".ico", ".mp4", ".whl", ".gz"}
 
 
 def digest(w: str) -> str:
