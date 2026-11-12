@@ -37,13 +37,15 @@ def rules(topic: str = "") -> str:
 
 
 def rule_add(agent: str, when: str, do: str, topic: str, reason: str, not_: str = "", project: str = "",
-             enforced_by: str = "", judgment_only: str = "", replaces: str = "") -> str:
-    """Add a shared rule in the When/Do/Not shape. Needs enforced_by (paths) or judgment_only (why no code can)."""
+             enforced_by: str = "", judgment_only: str = "", replaces: str = "", planned: str = "",
+             size: str = "") -> str:
+    """Add a shared rule in the When/Do/Not shape. Needs enforced_by (paths), judgment_only (why no code can), or
+    planned (the check to write) with size S, M or L."""
     from . import rulespec
     try:
         rep = collab.rule_add(_cfg(), agent=agent, text=rulespec.compose(when, do, not_), reason=reason,
                               project=project, topic=topic, replaces=replaces, enforced_by=enforced_by,
-                              judgment_only=judgment_only)
+                              judgment_only=judgment_only, planned=planned, size=size)
     except ValueError as ex:
         return f"refused: {ex}"
     return f"added {rep['id']}: {rep['rule']}" if rep["added"] else "an equal rule already exists; nothing changed"

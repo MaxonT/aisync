@@ -1,7 +1,8 @@
 """tidy: the clerk that keeps the shared rules small. It proposes; the owner ticks; nothing changes by itself.
 
 What: one report with four lists: rules that say the same thing (When and Do both close), rules nobody cited in
-      `unused_days`, the core layer over its budget, and rules out of shape or with no enforcer on record.
+      `unused_days`, the core layer over its budget, and rules out of shape or with no enforcer on record
+      (each with its planned check, or `no plan`), plus enforcer files that are gone.
 Why:  rules only grow (221 by 2026-11-08); a slim by hand happens once, a clerk keeps it small (owner 2026-11-08).
 How:  pure reads, no model, no network. Citations come from the journal plus files matched by `tidy_usage_globs`
       (default: Claude Code transcripts). The report goes to <hub>/tidy/<date>.md with checkboxes, written once a day
@@ -88,12 +89,14 @@ def report(cfg: core.Config, globs: list[str] | None = None, days: int = UNUSED_
         core_chars = sum(len(l) for h, body in secs if layers.is_core(layers.topic(h), cfg.core_topics)
                          for l in body if l.startswith("- "))
     budget = int(cfg.core_budget_chars or CORE_BUDGET_CHARS)
-    enf = enforcement.load(cfg)
-    no_enforcer = [rid for rid in ids if rid and not enf.get(rid)]
+    enf = enforcement.report(cfg)           # one reading of the registry for both commands
+    plans = {p["id"]: p for p in enf["planned"] if p["kind"] == "none"}
+    no_enforcer = [rid for rid in ids if rid and (rid in plans or rid in enf["unplanned"])]
     lint = rulespec.lint(rules)
     return {"rules": len(rules), "duplicates": duplicates(rules), "unused": unused, "unused_days": days,
             "core_chars": core_chars, "core_budget": budget, "over_budget": bool(cfg.core_topics) and core_chars > budget,
-            "out_of_shape": [b["id"] for b in lint["bad"]], "no_enforcer": no_enforcer}
+            "out_of_shape": [b["id"] for b in lint["bad"]], "no_enforcer": no_enforcer, "plans": plans,
+            "enforcer_gone": enf["missing_paths"] + enf["relative_paths"]}
 
 
 def render(rep: dict, day: str) -> str:
@@ -114,9 +117,20 @@ def render(rep: dict, day: str) -> str:
         lines.append("- no layered target")
     lines += ["", f"## Out of the When/Do/Not shape ({len(rep['out_of_shape'])})"]
     lines += [f"- [ ] {rid or '(no id)'}" for rid in rep["out_of_shape"]] or ["- none"]
+    plans = rep.get("plans", {})
     lines += ["", f"## No enforcer on record ({len(rep['no_enforcer'])})",
-              "Say what checks it (`enforced_by`) or why only judgment can (`judgment_only`) in rules-enforcement.toml."]
-    lines += [f"- [ ] {rid}" for rid in rep["no_enforcer"]] or ["- none"]
+              "A check is possible and not written. Write it, then `aisync rule enforce R-### --enforced-by <path>`; "
+              "a rule with no plan first gets `aisync rule enforce R-### --planned \"<the check>\" --size S|M|L`."]
+    for rid in rep["no_enforcer"]:
+        p = plans.get(rid)
+        lines.append(f"- [ ] {rid} planned {p['size']} since {p['since']}{' (OVERDUE)' if p['overdue'] else ''}: {p['check']}"
+                     if p else f"- [ ] {rid} no plan")
+    if not rep["no_enforcer"]:
+        lines.append("- none")
+    gone = rep.get("enforcer_gone", [])
+    lines += ["", f"## Enforcer files gone ({len(gone)})",
+              "The registry names a file that is not there. `aisync rule enforcement` prints the fix for each."]
+    lines += [f"- [ ] {g['id']}: {g['path']}" for g in gone] or ["- none"]
     return "\n".join(lines) + "\n"
 
 

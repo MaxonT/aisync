@@ -37,7 +37,17 @@ class TidyTests(Base):
         self.assertEqual(rep["unused"], ["R-101", "R-102", "R-104"])
         self.assertEqual(rep["out_of_shape"], ["R-104"])
         self.assertEqual(rep["no_enforcer"], ["R-101", "R-102", "R-104"])
+        (self.home / "rules-enforcement.toml").write_text(
+            '[R-101]\nplanned = "a lint on first emails"\nsize = "S"\nsince = "2026-01-01"\n'
+            '[R-102]\nnone = "imported without an enforcer"\n'
+            '[R-103]\nenforced_by = ["tests/gone.py"]\n')
+        rep = tidy.report(self.cfg, globs=[])
+        self.assertEqual(rep["no_enforcer"], ["R-101", "R-102", "R-104"])   # a plan or a legacy none key hides nothing
         text = tidy.render(rep, "2026-11-08")
+        self.assertIn("- [ ] R-101 planned S since 2026-01-01 (OVERDUE): a lint on first emails", text)
+        self.assertIn("- [ ] R-102 no plan", text)
+        self.assertIn("## Enforcer files gone (1)\n", text)
+        self.assertIn("- [ ] R-103: tests/gone.py", text)
         self.assertIn("- [ ] merge R-101 and R-102", text)
         self.assertIn("Checked 4 rules", text)
 
