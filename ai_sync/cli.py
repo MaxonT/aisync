@@ -36,7 +36,10 @@ Everything lives in `{hub}/`, a local git repo: each change is a commit, so noth
    It goes into the shared rules and every tool picks it up; you do not need to tell the other tools.
    Search first (`aisync rule list`); if a rule already covers it, replace it with `--replaces R-087` (its ID or a piece
    of its text) instead of adding a second one; the old one moves to `rules-archive.md`. Every rule keeps a stable
-   ID like `[R-087]`. Say what enforces it: `--enforced-by <test or hook path>` or `--judgment-only "<why>"`.
+   ID like `[R-087]`. Say what enforces it: `--enforced-by <test or hook path>`, `--judgment-only "<why>"`, or
+   `--planned "<the check to write>" --size S|M|L` when a check is possible and not written yet (`aisync rule
+   enforcement` lists each open one with its next step; `aisync rule enforce R-087 --enforced-by <path>` records
+   it once it exists).
    A rule is an interface, not an essay: `When: <trigger>. Do: <action>. Not: <forbidden>.`; the why goes in
    `--reason` (journal only). With `rule_spec = true` any other shape is refused; `aisync rule lint` lists misfits.
 3. **Before editing a repo** that other agents may be working in: `aisync claim --agent <tool> --project <repo>
@@ -168,18 +171,51 @@ def cmd_rule(a) -> int:
         return 0
     if a.action == "enforcement":
         from . import enforcement
+        try:
+            say = sys.stderr if a.json else sys.stdout       # --json prints only the JSON on stdout
+            if a.rebase:
+                done = enforcement.rebase(cfg, a.rebase)
+                for f in done["fixed"]:
+                    print(f"rebased {f['id']}: {f['path']} -> {f['now']}", file=say)
+                print(f"rebased {len(done['fixed'])}, still relative {len(done['left'])}", file=say)
+            if a.prune:
+                done = enforcement.prune(cfg)
+                print(f"pruned {len(done['removed'])} entries of retired rules"
+                      + (f"; kept {len(done['kept'])} not in the archive: {', '.join(done['kept'])}" if done["kept"] else ""),
+                      file=say)
+        except ValueError as ex:
+            print(f"error: {ex}", file=sys.stderr)
+            return 2
         rep = enforcement.report(cfg)
         if a.json:
             print(json.dumps(rep, ensure_ascii=False))
         else:
-            print(f"rules {rep['total']}: enforced {rep['enforced']}, judgment_only {rep['judgment_only']}, "
-                  f"none {rep['none']}")
-            print("meta  " + ", ".join(f"{k} {v}" for k, v in rep["meta"].items()))
-            for rid in rep["meta_none"]:
-                print(f"META NONE {rid}: say what enforces it in {enforcement.path(cfg)}")
-            for m in rep["missing_paths"]:
-                print(f"MISSING {m['id']}: {m['path']}")
+            print("\n".join(enforcement.lines(rep)))
         return 0 if rep["ok"] else 1
+    if a.action == "enforce":
+        from . import enforcement
+        try:
+            done = enforcement.set_entry(cfg, a.text[0] if a.text else "", enforced_by=a.enforced_by or "",
+                                         judgment_only=a.judgment_only or "", planned=a.planned or "",
+                                         size=a.size or "", since=a.since or "", note=a.note or "",
+                                         reason=a.reason or "")
+        except ValueError as ex:
+            print(f"error: {ex}", file=sys.stderr)
+            return 2
+        e = done["entry"]
+        what = (f"{len(e['enforced_by'])} path(s)" if e.get("enforced_by") else "judgment" if e.get("judgment_only")
+                else f"planned {e['size']} since {e['since']}" if e.get("planned") else "no plan")
+        if e.get("enforced_by") and e.get("planned"):
+            what += f", gap planned {e['size']}"
+        print(f"{done['id']}: {done['before']} -> {done['after']} ({what})")
+        # always logged, also with no agent named: a label change with no trace is how a rule goes quiet.
+        # The ID goes in refs: a summary naming it would count as a use of the rule in tidy.
+        core.append_event(cfg, agent=a.agent or os.environ.get("AISYNC_AGENT", "") or "unknown", kind="rule_change",
+                          project=a.project or "",
+                          summary=f"rule enforcement set: {done['before']} -> {done['after']} ({what})"
+                                  + (f". Reason: {' '.join(a.reason.split())}" if a.reason else ""),
+                          files=[enforcement.FILE], refs={"rule": done["id"]})
+        return 0
     if a.action == "lint":
         from . import rulespec
         rep = rulespec.lint(collab.rule_list(cfg))
@@ -219,7 +255,8 @@ def cmd_rule(a) -> int:
         rep = collab.rule_add(cfg, agent=a.agent or os.environ.get("AISYNC_AGENT", ""), text=" ".join(a.text),
                               reason=a.reason or "", project=a.project or "",
                               topic=a.topic or "", replaces=a.replaces or "",
-                              enforced_by=a.enforced_by or "", judgment_only=a.judgment_only or "")
+                              enforced_by=a.enforced_by or "", judgment_only=a.judgment_only or "",
+                              planned=a.planned or "", size=a.size or "")
     except ValueError as ex:
         print(f"error: {ex}", file=sys.stderr)
         return 2
@@ -664,7 +701,8 @@ def build_parser() -> argparse.ArgumentParser:
     # list after an `action` positional only parses intermixed on 3.12+)
     rsub = s.add_subparsers(dest="action", required=True)
     for action, ahelp in (("add", "add a shared rule every tool follows"), ("list", "print the shared rules"),
-                          ("enforcement", "which test, hook or checker keeps each rule"),
+                          ("enforcement", "which test, hook or checker keeps each rule, and what is still open"),
+                          ("enforce", "set what enforces an existing rule: `rule enforce R-087 --enforced-by <path>`"),
                           ("lint", "rules not in the When/Do/Not shape"),
                           ("rewrite", "rewrite rules by ID from a JSON file, refusing lost facts")):
         r = rsub.add_parser(action, help=ahelp)
@@ -680,8 +718,16 @@ def build_parser() -> argparse.ArgumentParser:
         r.add_argument("--replaces", help="ID (R-087) or a piece of the text of the current rule this one replaces; "
                                           "it moves to rules-archive.md")
         r.add_argument("--archived", action="store_true", help="with `list`: the retired rules from rules-archive.md")
-        r.add_argument("--enforced-by", help="add: comma-separated paths of the test, hook or checker that enforces it")
-        r.add_argument("--judgment-only", help="add: why nothing in code can check the rule (instead of --enforced-by)")
+        r.add_argument("--enforced-by", help="add, enforce: comma-separated paths of the test, hook or checker that enforces it")
+        r.add_argument("--judgment-only", help="add, enforce: why nothing in code can check the rule (instead of --enforced-by)")
+        r.add_argument("--planned", help="add, enforce: the check that would enforce the rule and is not written yet "
+                                         "(with --size); beside --enforced-by it records a gap the enforcer leaves")
+        r.add_argument("--size", help="with --planned: S (under 30 min), M (a few hours) or L (a day or more)")
+        r.add_argument("--since", help="enforce: the day the check was planned, YYYY-MM-DD (default: today)")
+        r.add_argument("--note", help="enforce: how far the enforcer reaches")
+        r.add_argument("--rebase", metavar="DIR", help="with `enforcement`: make relative enforced_by paths absolute "
+                                                       "against DIR, for those that exist there")
+        r.add_argument("--prune", action="store_true", help="with `enforcement`: drop the entries of retired rules")
         r.add_argument("--json", action="store_true", help="with `enforcement` or `lint`: machine-readable output")
         r.set_defaults(fn=cmd_rule)
 
