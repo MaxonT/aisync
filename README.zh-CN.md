@@ -102,6 +102,7 @@ aisync release -a codex -p api
 | `log` | 追加一条事件（`dev_log`、`decision`、`blocked`、`unblocked`、`rule_change`、`note`） |
 | `rule add` / `rule list` | 任何 agent 都能加一条共享规则（`--when/--do/--not`、`--topic`、`--replaces R-012`），下次同步时每个工具的副本都会拿到 |
 | `rule lint` / `rule rewrite` / `rule enforcement` | 列出不符合 When/Do/Not 格式的规则 / 按编号改写且不丢任何事实 / 每条规则由哪个测试或 hook 守着 |
+| `rule enforce` | 给一条已有的规则登记它靠什么守：`rule enforce R-012 --enforced-by tests/test_x.py`、`--judgment-only "<原因>"`，或者检查写得出来但还没写时用 `--planned "<要写的检查>" --size S\|M\|L`。之后 `rule enforcement` 逐行列出还开着的缺口和下一步：执行者文件没了、计划过期（S 7 天、M 30 天、L 90 天）、规则没有计划。计划的时钟只往前走：改晚、改大或改成 judgment-only 都要 `--reason`，并留下记录 |
 | `tidy` | 规则文员：疑似重复、最近没人引用的规则、核心层超预算；只提建议，由你勾选 |
 | `rulecheck` | 证明一次规则整理没丢掉硬事实（路径、数字、命令、编号） |
 | `instinct` | 可选的习惯清单，从过去的错误里长出来，每次会话开头注入 |
