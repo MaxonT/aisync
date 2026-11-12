@@ -22,8 +22,17 @@ _ID = re.compile(r"^\[(R-\d{3,})\]\s*")
 _TAG = re.compile(r"\s*(\((?:\d{4}-\d{2}-\d{2}|owner)[^()]*(?:\([^()]*\)[^()]*)*\))\s*$")
 _META = re.compile(r"^Meta rule[.:]?\s+")
 _FIELD = re.compile(r"(?:(?<=\s)|^)(When|Do|Not):\s*")
-_SELF_RANK = re.compile(r"highest|top priority|最高优先级", re.I)   # R-358: a rule does not rank itself
-_QUOTED = re.compile(r"“[^”]*”|\"[^\"]*\"|「[^」]*」|‘[^’]*’|'[^']*'")
+# R-358: a rule does not rank itself. Only a claim about the rule's own rank counts ("the highest rule", "this rule
+# has top priority", the label TOP PRIORITY, 最高优先级), read in When and Do: Not says what is forbidden, so naming the
+# words there is not a claim. "choose the highest compatible version" is an ordinary rule.
+_SELF_RANK = re.compile(
+    r"(?i:\b(?:this|the) (?:highest|top|first)(?:[- ]priority)? rule\b"
+    r"|\b(?:highest|top)[- ]priority rule\b"
+    r"|\bthis rule\b[^.。;；]{0,40}\b(?:highest|top priority|above all|overrides? (?:all|every))\b)"
+    r"|\bTOP PRIORITY\b|最高优先级|第一优先级")
+# quoted text does not count. A single quote opens only after a space or bracket and closes before one, so the
+# apostrophes of don't ... rule's are not a pair of quotes.
+_QUOTED = re.compile(r"“[^”]*”|\"[^\"]*\"|「[^」]*」|‘[^’]*’|(?<![\w'])'[^']*'(?![\w'])")
 
 
 @dataclass
@@ -85,8 +94,10 @@ def problems(rule: str, need_id: bool = True, need_tag: bool = True) -> list[str
         for k in ("When", "Do"):
             if not f[k].strip(" .。;；"):
                 out.append(f"{k}: is empty")
-    if _SELF_RANK.search(_QUOTED.sub(" ", body)):
-        out.append("calls itself highest / TOP PRIORITY / 最高优先级 (R-358): say what it does; quoted words do not count")
+    claim = " ".join((f or {}).get(k, "") for k in ("When", "Do")) if f else body
+    if _SELF_RANK.search(_QUOTED.sub(" ", claim)):
+        out.append("ranks itself (the highest rule / TOP PRIORITY / 最高优先级, R-358): say what it does; "
+                   "quoted words and the Not: part do not count")
     if len(body) > MAX_BODY:
         out.append(f"body is {len(body)} characters, over {MAX_BODY}: keep what to do, move the why to --reason")
     if need_tag and not tag:

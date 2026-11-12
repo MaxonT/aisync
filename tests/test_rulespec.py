@@ -179,3 +179,18 @@ def test_self_ranking_words_are_refused_outside_quotes():   # R-358
     assert any("R-358" in p for p in rulespec.problems(zh))
     assert not any("R-358" in p for p in rulespec.problems(quoted))
     assert not any("R-358" in p for p in rulespec.problems(meta))
+    tag = " (2026-11-12 · claude-code)"
+    claims = ["When: any rule. Do: this rule has top priority over the others.",
+              "When: two rules conflict. Do: don't demote this highest rule's precedence.",     # apostrophes are not quotes
+              "When: any task. Do: follow this highest-priority rule first.",
+              "TOP PRIORITY rule. When: drafting a post. Do: use this skill.",                    # no shape and a rank label
+              "When: any rule. Do: 第一优先级，先读这一条。"]
+    plain = ["When: selecting a release. Do: choose the highest compatible version.",           # an ordinary use of the word
+             "When: triaging. Do: give safety the highest priority and treat a leak as top priority.",
+             "When: writing or reviewing a rule. Do: let only the hook line claim the first line. "
+             "Not: a rule calling itself highest or TOP PRIORITY.",                              # Not: names what is forbidden
+             "When: ranking stocks. Do: pick the 'highest' and the 'lowest' of the day."]
+    for body in claims:
+        assert any("R-358" in p for p in rulespec.problems("- [R-999] " + body + tag)), body
+    for body in plain:
+        assert not any("R-358" in p for p in rulespec.problems("- [R-999] " + body + tag)), body
