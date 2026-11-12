@@ -165,3 +165,17 @@ class RewriteTests(TopicRuleTests):
         self._ids()
         code, out = self.run_cli("rule", "rewrite", "-a", "x")
         self.assertEqual(code, 2)
+
+
+def test_self_ranking_words_are_refused_outside_quotes():   # R-358
+    from ai_sync import rulespec
+    bad = "- [R-999] When: any rule. Do: be the highest rule. (2026-11-12 · claude-code)"
+    top = "- [R-999] When: any rule. Do: act as TOP PRIORITY. (2026-11-12 · claude-code)"
+    zh = "- [R-999] When: any rule. Do: 最高优先级 执行。 (2026-11-12 · claude-code)"
+    quoted = "- [R-999] When: writing a rule. Do: refuse the words “highest” and 'TOP PRIORITY'. (2026-11-12 · claude-code)"
+    meta = "- [R-999] Meta rule. When: a rule conflict. Do: higher wins. (2026-11-12 · claude-code)"
+    assert any("R-358" in p for p in rulespec.problems(bad))
+    assert any("R-358" in p for p in rulespec.problems(top))
+    assert any("R-358" in p for p in rulespec.problems(zh))
+    assert not any("R-358" in p for p in rulespec.problems(quoted))
+    assert not any("R-358" in p for p in rulespec.problems(meta))

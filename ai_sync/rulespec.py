@@ -22,6 +22,8 @@ _ID = re.compile(r"^\[(R-\d{3,})\]\s*")
 _TAG = re.compile(r"\s*(\((?:\d{4}-\d{2}-\d{2}|owner)[^()]*(?:\([^()]*\)[^()]*)*\))\s*$")
 _META = re.compile(r"^Meta rule[.:]?\s+")
 _FIELD = re.compile(r"(?:(?<=\s)|^)(When|Do|Not):\s*")
+_SELF_RANK = re.compile(r"highest|top priority|最高优先级", re.I)   # R-358: a rule does not rank itself
+_QUOTED = re.compile(r"“[^”]*”|\"[^\"]*\"|「[^」]*」|‘[^’]*’|'[^']*'")
 
 
 @dataclass
@@ -83,6 +85,8 @@ def problems(rule: str, need_id: bool = True, need_tag: bool = True) -> list[str
         for k in ("When", "Do"):
             if not f[k].strip(" .。;；"):
                 out.append(f"{k}: is empty")
+    if _SELF_RANK.search(_QUOTED.sub(" ", body)):
+        out.append("calls itself highest / TOP PRIORITY / 最高优先级 (R-358): say what it does; quoted words do not count")
     if len(body) > MAX_BODY:
         out.append(f"body is {len(body)} characters, over {MAX_BODY}: keep what to do, move the why to --reason")
     if need_tag and not tag:

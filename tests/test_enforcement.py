@@ -44,6 +44,15 @@ class EnforcementTests(CollabBase):
         self.assertEqual(self.add()[0], 0)
         self.assertFalse(enforcement.path(self.cfg).exists())
 
+    def test_without_require_enforcer_replacing_a_planned_rule_names_nothing_and_does_not_crash(self):
+        cfg_file = self.home / "config.toml"
+        cfg_file.write_text(cfg_file.read_text().replace("require_enforcer = true\n", ""))
+        self.cfg = core.load_config()
+        enforcement.put(self.cfg, "R-003", {"planned": "a letter lint", "size": "S", "since": "2026-10-01"})
+        code, out = self.run_cli("rule", "add", "-a", "x", "-t", "协作", "--replaces", "R-003",
+                                 "letters live on the mailbox branch, one file each")
+        self.assertEqual(code, 0, out)
+
     def test_rule_add_without_an_enforcer_is_refused(self):
         code, out = self.add()
         self.assertEqual(code, 2)
@@ -290,9 +299,18 @@ class EnforcementTests(CollabBase):
         self.assertIn("planned check", out)
         self.assertIn("[R-003]", "\n".join(collab.rule_list(self.cfg)))
         code, out = self.run_cli("rule", "add", "-a", "x", "-t", "协作", "--replaces", "R-003", "--planned", "a letter lint",
+                                 "--size", "L", "letters live on the mailbox branch, one file each")
+        self.assertEqual(code, 2)                                           # a larger size would postpone the due day
+        self.assertIn("--size S", out)
+        self.assertIn("[R-003]", "\n".join(collab.rule_list(self.cfg)))
+        code, out = self.run_cli("rule", "add", "-a", "x", "-t", "协作", "--replaces", "R-003", "--planned", "a letter lint",
                                  "--size", "S", "letters live on the mailbox branch, one file each")
         self.assertEqual(code, 0, out)
         self.assertEqual(self.sidecar()["R-004"]["since"], "2026-10-01")
+        code, out = self.run_cli("rule", "add", "-a", "x", "-t", "协作", "--replaces", "mailbox branch, one file each",
+                                 "--planned", "a letter lint", "--size", "L", "letters stay on the mailbox branch alone")
+        self.assertEqual(code, 0, out)                                      # replaced by a piece of its text: size clamped
+        self.assertEqual((self.sidecar()["R-005"]["size"], self.sidecar()["R-005"]["since"]), ("S", "2026-10-01"))
 
     def test_hand_edited_registry_does_not_crash_or_hide_a_plan(self):
         from datetime import date
