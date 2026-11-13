@@ -47,8 +47,6 @@ https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
 
 https://github.com/user-attachments/assets/dcba3452-a9bd-4fe4-8d2a-12a457b6e8f4
 
-https://github.com/user-attachments/assets/5ea7928b-4985-4700-8551-90477a84df40
-
 
 ## Integrations: native hooks are not the compatibility boundary
 
@@ -263,3 +261,18 @@ comes from [`.github/refine/how-it-works.stages.json`](.github/refine/how-it-wor
 credits above from [`.github/refine/lineage.json`](.github/refine/lineage.json). All demo data is synthetic.
 
 MIT licensed.
+
+
+## More Videos if you like!
+
+https://github.com/user-attachments/assets/5ea7928b-4985-4700-8551-90477a84df40
+
+https://github.com/user-attachments/assets/91385ac4-714c-4a16-908b-1859ef1c78e2
+
+
+https://github.com/user-attachments/assets/bf661d5c-b7b1-4876-8469-2e11dd95b232
+
+
+
+https://github.com/user-attachments/assets/d32f3abd-2986-4fbf-83a2-be287f0185a7
+
