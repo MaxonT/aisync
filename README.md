@@ -1,3 +1,6 @@
+
+
+
 <div align="center">
 
 <img src="docs/assets/banner.svg" width="100%" alt="aisync: Multi-Agent Context Management, Coordination & Observability"/>
@@ -44,7 +47,7 @@ https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
 
 https://github.com/user-attachments/assets/dcba3452-a9bd-4fe4-8d2a-12a457b6e8f4
 
-
+https://github.com/user-attachments/assets/5ea7928b-4985-4700-8551-90477a84df40
 
 
 ## Integrations: native hooks are not the compatibility boundary
