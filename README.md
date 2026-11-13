@@ -42,6 +42,10 @@ Developers running **two or more AI coding agents** across one or multiple repos
 https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
 
 
+https://github.com/user-attachments/assets/dcba3452-a9bd-4fe4-8d2a-12a457b6e8f4
+
+
+
 
 ## Integrations: native hooks are not the compatibility boundary
 
