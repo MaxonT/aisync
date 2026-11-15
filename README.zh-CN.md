@@ -135,6 +135,10 @@ aisync release -a codex -p api
 | `sync` / `watch` | 跑一次同步 / 防抖的事件驱动循环 |
 | `resolve` / `resume` | 裁决规则冲突 / 暂停后清零失败计数 |
 | `demo` | 上面那个临时 hub |
+| `version` / `-v` / `-V` / `--version` | 打印版本号 |
+| `help [命令]` | 本页帮助，或某个命令的选项（`aisync help log`） |
+| `update` | 查 GitHub 上有没有新版本，并打印升级命令（uv、pipx、install.sh、brew 或 pip）；它自己不安装 |
+| `doctor` | 检查 python、git、hub 目录和日志哈希链（任一项失败则退出码为 1） |
 
 ## 0.2.0 新增：规则写成接口，分层加载
 

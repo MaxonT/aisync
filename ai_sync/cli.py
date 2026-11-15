@@ -4,11 +4,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, board, collab, core, demo, hooks, ui, watch, webinbox
+from . import __version__, board, collab, core, demo, hooks, ui, update, watch, webinbox
 
 DEFAULT_TARGETS = [("claude-code", "~/.claude/CLAUDE.md"),
                    ("codex", "~/.codex/AGENTS.md")]
@@ -674,9 +675,55 @@ class _Root(argparse.ArgumentParser):
         return ui.help_screen(ui.style_for(sys.stdout), __version__, commands) + "\n"
 
 
+def cmd_version(a) -> int:
+    print(f"aisync {__version__}")
+    return 0
+
+
+def cmd_help(a) -> int:
+    parser = build_parser()
+    if not a.topic:
+        print(parser.format_help(), end="")
+        return 0
+    choices = {}
+    for action in parser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            choices = action.choices
+    sub = choices.get(a.topic)
+    if sub is None:
+        print(f"error: no such command: {a.topic} (see `aisync help`)", file=sys.stderr)
+        return 2
+    print(sub.format_help(), end="")
+    return 0
+
+
+def cmd_update(a) -> int:
+    code, message = update.check(__version__, update.fetch_latest_tag,
+                                 update.install_method(__file__, sys.executable))
+    print(message)
+    return code
+
+
+def cmd_doctor(a) -> int:
+    cfg = core.load_config()
+    py_ok = sys.version_info >= (3, 11)
+    git_ok = shutil.which("git") is not None
+    hub_ok = cfg.root.is_dir()
+    problems = core.verify_chain(cfg)
+    rows = [
+        (py_ok, f"python {sys.version.split()[0]} (needs 3.11+)"),
+        (git_ok, "git on PATH" if git_ok else "git not found (aisync keeps its hub in a git repo)"),
+        (hub_ok, f"hub {cfg.root}" if hub_ok else f"hub {cfg.root} does not exist (run aisync init)"),
+        (not problems, "journal chain intact" if not problems else "journal chain: " + "; ".join(problems[:3])),
+    ]
+    for ok, text in rows:
+        print(("ok    " if ok else "FAIL  ") + text)
+    return 0 if all(ok for ok, _ in rows) else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = _Root(prog="aisync", description="Multi-Agent Context Management, Coordination & Observability.")
-    p.add_argument("--version", action="version", version=f"aisync {__version__}")
+    p.add_argument("-v", "-V", "--version", action="version", version=f"aisync {__version__}")
     sub = p.add_subparsers(dest="cmd", parser_class=argparse.ArgumentParser)
 
     s = sub.add_parser("init", help="create the hub (default ~/.ai-sync, override with AISYNC_HOME)")
@@ -859,6 +906,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     s = sub.add_parser("resume", help="clear failure counters after fixing a paused sync")
     s.set_defaults(fn=cmd_resume)
+    s = sub.add_parser("version", help="print the version (same as --version)")
+    s.set_defaults(fn=cmd_version)
+    s = sub.add_parser("help", help="show this screen, or `help <command>` for one command's options")
+    s.add_argument("topic", nargs="?", help="a command name, e.g. `help log`")
+    s.set_defaults(fn=cmd_help)
+    s = sub.add_parser("update", help="check GitHub for a newer release and print the command that upgrades (never installs)")
+    s.set_defaults(fn=cmd_update)
+    s = sub.add_parser("doctor", help="check python, git, the hub folder and the journal chain (exit 1 on any failure)")
+    s.set_defaults(fn=cmd_doctor)
     return p
 
 
