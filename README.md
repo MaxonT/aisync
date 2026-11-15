@@ -82,6 +82,13 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
+**Or from a package manager.** The command is still `aisync`:
+
+```bash
+pipx install aisync-cli           # PyPI (or: uv tool install aisync-cli)
+brew install maxont/tap/aisync    # Homebrew tap
+```
+
 
 ### Two agents, one file
 
