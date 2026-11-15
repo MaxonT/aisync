@@ -890,7 +890,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--take", required=True, choices=("truth", "target"))
     s.set_defaults(fn=cmd_resolve)
 
-    s = sub.add_parser("mcp", help="serve the hub to any MCP agent over stdio (needs: pip install 'aisync[mcp]')")
+    s = sub.add_parser("mcp", help="serve the hub to any MCP agent over stdio (needs: pip install 'aisync-cli[mcp]')")
     s.set_defaults(fn=cmd_mcp)
     s = sub.add_parser("tidy", help="rules clerk: likely duplicates, rules not cited lately, core budget, shape and enforcer gaps (proposals only)")
     s.add_argument("--json", action="store_true")

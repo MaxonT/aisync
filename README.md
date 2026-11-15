@@ -150,7 +150,7 @@ aisync release -a codex -p api
 | `guard` | Claude Code hook: one session per repo; denies an edit when another session holds the repo (opt-in, see below) |
 | `lease` | who holds which repo (`lease status`), or free one by hand (`lease release --key`) |
 | `wt` | a session's own git worktree: `wt start` opens it; `wt land` lands it on main and needs `--yes` (without it: a dry run) |
-| `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync[mcp]'`) |
+| `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync-cli[mcp]'`) |
 | `claim` / `release` / `claims` | who is working on which files right now; overlap = exit 3 |
 | `news` | what other tools did since this session last looked |
 | `hook <tool>` | entry point for Claude Code, Codex and Cursor hooks (reads hook JSON, never fails) |
@@ -185,7 +185,7 @@ A rules file grows until every session pays for it and nobody reads it. 0.2.0 tr
 - **A clerk, not a janitor.** `aisync tidy` proposes (duplicates, uncited rules, budget overruns) and never edits;
   a replaced rule moves to `rules-archive.md` with its ID, nothing is deleted.
 - **Any agent.** Three doors: the AGENTS.md page, the CLI, and `aisync mcp` (tools: rules, rule_add, log, claim,
-  release, news, status, tidy). The core stays standard-library only; the MCP SDK is the optional `aisync[mcp]` extra.
+  release, news, status, tidy). The core stays standard-library only; the MCP SDK is the optional `aisync-cli[mcp]` extra.
 
 ## How it works
 
