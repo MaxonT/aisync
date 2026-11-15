@@ -1,6 +1,8 @@
 
 
 
+
+
 <div align="center">
 
 <img src="docs/assets/banner.svg" width="100%" alt="aisync: Multi-Agent Context Management, Coordination & Observability"/>
@@ -43,6 +45,11 @@ Developers running **two or more AI coding agents** across one or multiple repos
 ### The Agent Swarm Floor
 
 https://github.com/user-attachments/assets/b28bed86-c262-4efa-b92d-9eeca2bf5b73
+
+
+
+https://github.com/user-attachments/assets/f741ef6f-0c10-46f4-8c94-769c6e02d30e
+
 
 
 
