@@ -71,6 +71,7 @@ nav a{margin-right:16px;font-size:14px;text-decoration:none}
 <li>One of <code>uv</code>, <code>pipx</code> or <code>python3 -m pip</code> is available. Prefer them in that order. When the system Python refuses user installs (PEP 668), the script uses its own virtualenv in <code>~/.local/share/aisync</code> instead.</li>
 <li>Never use <code>sudo</code>. Never install system-wide.</li>
 </ul>
+<p>The same <code>aisync</code> command is also on PyPI as <code>aisync-cli</code> (<code>pipx install aisync-cli</code>) and in the Homebrew tap (<code>brew install maxont/tap/aisync</code>). The install script above is the default; use a package manager only when the user asks for it.</p>
 
 <h3>3. Ask before you touch anything</h3>
 <p>Before running anything that changes the machine, show the user the exact command and wait for a yes. Start with a dry run:</p>
