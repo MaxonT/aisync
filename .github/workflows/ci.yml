@@ -55,10 +55,10 @@ jobs:
           /tmp/build/bin/pip wheel -q --no-deps -w dist .
       - name: Dry run changes nothing, then install
         run: |
-          bash docs/install.sh --dry-run --from dist/aisync-*.whl | tee dry.txt
+          bash docs/install.sh --dry-run --from dist/aisync_cli-*.whl | tee dry.txt
           grep -q "dry-run finished" dry.txt
           test ! -e "$HOME/.local/bin/aisync"
-          bash docs/install.sh --from dist/aisync-*.whl
+          bash docs/install.sh --from dist/aisync_cli-*.whl
       - name: The installed command works
         run: |
           export PATH="$HOME/.local/bin:$PATH" AISYNC_NO_NOTIFY=1

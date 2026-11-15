@@ -44,6 +44,13 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 需要 Python 3.11+ 和 git，macOS 或 Linux。别的都不需要：aisync 只用 Python 标准库。
 
+**也可以用包管理器装。** 命令仍然是 `aisync`：
+
+```bash
+pipx install aisync-cli           # PyPI（或 uv tool install aisync-cli）
+brew install maxont/tap/aisync    # Homebrew tap
+```
+
 第一次成功运行命令后，CLI 会问一次：`Star MaxonT/aisync on GitHub? [y/N]`。默认是不点，以后不会再问；在 CI、管道和脚本里不会出现。回答 y 会用你自己的 `gh` 登录点 star（没装 `gh` 就只打印链接）。设置 `NO_STAR_PROMPT=1` 可以跳过这个问题。
 
 ## 看一眼
