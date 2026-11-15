@@ -50,11 +50,11 @@ def install_method(module_file: str | Path, executable: str = "") -> str:
 
 
 UPGRADE_COMMANDS = {
-    "uv": "uv tool upgrade aisync",
-    "pipx": "pipx upgrade aisync",
+    "uv": "uv tool upgrade aisync-cli",
+    "pipx": "pipx upgrade aisync-cli",
     "installer": "curl -fsSL https://maxont.github.io/aisync/install.sh | bash",
     "brew": "brew upgrade aisync",
-    "pip": f"{sys.executable} -m pip install --upgrade aisync",
+    "pip": f"{sys.executable} -m pip install --upgrade aisync-cli",
 }
 
 

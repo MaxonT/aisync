@@ -13,9 +13,9 @@
 # It never edits shell config, never uses sudo, and never reads any of your files.
 set -euo pipefail
 
-VERSION="0.2.6"
+VERSION="0.2.7"
 REPO="https://github.com/MaxonT/aisync"
-SPEC="${REPO}/releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl"
+SPEC="${REPO}/releases/download/v${VERSION}/aisync_cli-${VERSION}-py3-none-any.whl"
 VENV="${HOME}/.local/share/aisync/venv"
 BIN_DIR="${HOME}/.local/bin"
 DRY=0
@@ -24,7 +24,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
     --version) VERSION="${2:?--version needs a release number, e.g. 0.1.0}"; VERSION="${VERSION#v}"
-               SPEC="${REPO}/releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl"; shift ;;
+               SPEC="${REPO}/releases/download/v${VERSION}/aisync_cli-${VERSION}-py3-none-any.whl"; shift ;;
     --ref) SPEC="git+${REPO}@${2:?--ref needs a branch, tag or commit}"; shift ;;
     --from) SPEC="${2:?--from needs a wheel file or URL}"; shift ;;
     -h|--help) sed -n '2,13p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;

@@ -116,14 +116,14 @@ class InstallScriptTests(unittest.TestCase):
     def test_pins_the_package_version_and_parses(self):
         text = self.SCRIPT.read_text()
         self.assertIn(f'VERSION="{VERSION}"', text)
-        self.assertIn("releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl", text)
+        self.assertIn("releases/download/v${VERSION}/aisync_cli-${VERSION}-py3-none-any.whl", text)
         self.assertEqual(subprocess.run(["bash", "-n", str(self.SCRIPT)]).returncode, 0)
 
     def test_version_flag_installs_that_release(self):
         r = subprocess.run(["bash", str(self.SCRIPT), "--dry-run", "--version", "v9.8.7"],
                            capture_output=True, text=True, timeout=60)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn("releases/download/v9.8.7/aisync-9.8.7-py3-none-any.whl", r.stdout)
+        self.assertIn("releases/download/v9.8.7/aisync_cli-9.8.7-py3-none-any.whl", r.stdout)
         release = (ROOT / ".github/workflows/release.yml").read_text()
         self.assertIn('install.sh | bash -s -- --version "${TAG#v}"', release)
 

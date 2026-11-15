@@ -122,7 +122,7 @@ aisync release -a codex -p api
 | `tidy` | 规则文员：疑似重复、最近没人引用的规则、核心层超预算；只提建议，由你勾选 |
 | `rulecheck` | 证明一次规则整理没丢掉硬事实（路径、数字、命令、编号） |
 | `instinct` | 可选的习惯清单，从过去的错误里长出来，每次会话开头注入 |
-| `mcp` | 通过 stdio 把 hub 提供给任何 MCP agent（`pip install 'aisync[mcp]'`） |
+| `mcp` | 通过 stdio 把 hub 提供给任何 MCP agent（`pip install 'aisync-cli[mcp]'`） |
 | `claim` / `release` / `claims` | 此刻谁在改哪些文件；撞车 = 退出码 3 |
 | `news` | 这个会话上次看过之后，别的工具做了什么 |
 | `hook <tool>` | Claude Code、Codex、Cursor 的 hook 入口（读 hook JSON，永不报错退出） |
@@ -156,7 +156,7 @@ aisync release -a codex -p api
 - **文员，不是清洁工。** `aisync tidy` 只提建议（重复、没人引用、超预算），从不改动；被取代的规则
   带着编号移进 `rules-archive.md`，什么都不删。
 - **任何 agent。** 三扇门：AGENTS.md 页面、CLI、`aisync mcp`（工具：rules、rule_add、log、claim、
-  release、news、status、tidy）。核心仍然只用标准库；MCP SDK 是可选的 `aisync[mcp]`。
+  release、news、status、tidy）。核心仍然只用标准库；MCP SDK 是可选的 `aisync-cli[mcp]`。
 
 ## 工作原理
 
