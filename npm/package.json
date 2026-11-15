@@ -1,0 +1,26 @@
+{
+  "name": "aisync-cli",
+  "version": "0.2.7",
+  "description": "aisync: shared rules, journal and claims for every AI coding tool. This npm package runs the PyPI release (aisync-cli) through uvx or pipx.",
+  "license": "MIT",
+  "bin": {
+    "aisync": "bin/aisync.js"
+  },
+  "files": [
+    "bin/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["ai", "agents", "claude-code", "codex", "cursor", "multi-agent", "coordination", "cli"],
+  "homepage": "https://maxont.github.io/aisync",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaxonT/aisync.git",
+    "directory": "npm"
+  },
+  "bugs": {
+    "url": "https://github.com/MaxonT/aisync/issues"
+  }
+}
