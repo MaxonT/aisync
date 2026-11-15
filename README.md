@@ -43,7 +43,8 @@ Developers running **two or more AI coding agents** across one or multiple repos
 <div align="center">
 
 ### The Agent Swarm Floor
-![Uploading cover.png…]()
+
+<img width="705" height="875" alt="cover" src="https://github.com/user-attachments/assets/cee23378-2379-49a5-960b-ac63764bb95f" />
 
 
 
