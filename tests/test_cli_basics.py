@@ -109,3 +109,18 @@ class DoctorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReleaseWorkflowTests(unittest.TestCase):
+    """The PyPI job must publish only after the GitHub Release, by Trusted Publishing (no stored token).
+    Plain text checks, so the test needs no YAML library (the project stays stdlib-only)."""
+
+    def test_pypi_job_uses_trusted_publishing_after_release(self):
+        root = Path(__file__).resolve().parents[1]
+        text = (root / ".github/workflows/release.yml").read_text()
+        job = text[text.index("  publish-pypi:"):]
+        self.assertIn("needs: release", job)
+        self.assertIn("id-token: write", job)
+        self.assertIn("pypa/gh-action-pypi-publish@release/v1", job)
+        self.assertNotIn("password", job)
+        self.assertNotIn("PYPI_TOKEN", job)
