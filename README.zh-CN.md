@@ -67,7 +67,7 @@ docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
 
 <video src="https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d" width="360" controls></video>
 
-<sub>42 秒 · 示意动画，数据为合成演示 · 建议打开声音</sub>
+<sub>42 秒 · 示意动画，数据为合成演示 · 建议打开声音 · <a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">播放器打不开？直接打开视频</a></sub>
 
 </div>
 
