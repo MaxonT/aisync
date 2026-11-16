@@ -173,7 +173,7 @@ aisync release -a codex -p api
 | `wt` | a session's own git worktree: `wt start` opens it; `wt land` lands it on main and needs `--yes` (without it: a dry run) |
 | `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync-cli[mcp]'`) |
 | `claim` / `release` / `claims` | who is working on which files right now; overlap = exit 3 |
-| `news` | what other tools did since this session last looked |
+| `news` | what other tools did since this session last looked (`--last N` shows the last N events on the first call) |
 | `hook <tool>` | entry point for Claude Code, Codex and Cursor hooks (reads hook JSON, never fails) |
 | `install-hooks` | wire the hooks, seed the rules block, add the git `Agent:` trailer hook; diff first, asks before writing (`--dry-run`, `--yes`) |
 | `status` | health, conflicts, claims, blockers, metrics (exit 1 when something needs you) |
@@ -310,4 +310,3 @@ https://github.com/user-attachments/assets/bf661d5c-b7b1-4876-8469-2e11dd95b232
 
 
 https://github.com/user-attachments/assets/d32f3abd-2986-4fbf-83a2-be287f0185a7
-
