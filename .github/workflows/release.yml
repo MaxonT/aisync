@@ -114,3 +114,33 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: dist/
+          skip-existing: true   # a re-run must not fail on a version PyPI already has
+
+  publish-github-npm:
+    # The npm package on GitHub Packages (shows in the repo sidebar). Uses only GITHUB_TOKEN with packages: write.
+    # The npmjs.org copy is published separately by the owner (2FA approval). The name is scoped to the owner.
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.TAG }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: https://npm.pkg.github.com
+          scope: '@maxont'
+      - name: Publish @maxont/aisync-cli to GitHub Packages
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(node -p 'require("./package.json").version')" = "${TAG#v}"
+          node -e 'const f="package.json";const p=require("./"+f);p.name="@maxont/aisync-cli";p.publishConfig={registry:"https://npm.pkg.github.com"};require("fs").writeFileSync(f,JSON.stringify(p,null,2))'
+          npm publish --access public
