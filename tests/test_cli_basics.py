@@ -119,9 +119,9 @@ class ReleaseWorkflowTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         text = (root / ".github/workflows/release.yml").read_text()
         job = text[text.index("  publish-pypi:"):]
-        self.assertIn("needs: release", job)
+        self.assertIn("needs: [release, install-check]", job)
         self.assertIn("id-token: write", job)
-        self.assertIn("pypa/gh-action-pypi-publish@release/v1", job)
+        self.assertIn("pypa/gh-action-pypi-publish@", job)   # pinned to a commit SHA
         self.assertNotIn("password", job)
         self.assertNotIn("PYPI_TOKEN", job)
 
@@ -135,3 +135,9 @@ class RuleListTopicTests(unittest.TestCase):
                 code = cli.main(["rule", "list", "--topic", "no-such-topic"])
             self.assertEqual(code, 1)
             self.assertIn("no rules under topic 'no-such-topic'", err.getvalue())
+
+
+class InstallMethodTests(unittest.TestCase):
+    def test_homebrew_python_site_packages_is_pip_not_brew(self):
+        self.assertEqual(update.install_method("/opt/homebrew/lib/python3.12/site-packages/ai_sync/update.py"), "pip")
+        self.assertEqual(update.install_method("/opt/homebrew/Cellar/aisync/0.2.8/libexec/lib/ai_sync/update.py"), "brew")

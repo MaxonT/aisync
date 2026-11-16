@@ -14,20 +14,23 @@ on:
         required: true
 
 permissions:
-  contents: write
-  packages: write
+  contents: read          # least privilege at workflow level; write is granted per job below
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     env:
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ env.TAG }}
+          persist-credentials: false
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
 
@@ -51,12 +54,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
+            gh release upload "$TAG" dist/*   # no --clobber: a re-run must not replace published bytes
           else
             gh release create "$TAG" dist/* --title "aisync ${TAG#v}" --generate-notes
           fi
 
-      - uses: docker/login-action@v4
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -70,7 +73,7 @@ jobs:
           docker push "$image:${TAG#v}"
           docker push "$image:latest"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist
           path: dist/
@@ -87,7 +90,8 @@ jobs:
         run: |
           apt-get update -qq && apt-get install -y -qq curl git
           # --version ties the check to this tag, not to whatever version the live site pins
-          curl -fsSL https://maxont.github.io/aisync/install.sh | bash -s -- --version "${TAG#v}"
+          # the install script of THIS tag, not the live site copy
+          curl -fsSL "https://raw.githubusercontent.com/MaxonT/aisync/${TAG}/docs/install.sh" | bash -s -- --version "${TAG#v}"
       - name: The installed command is this release
         run: |
           export PATH="$HOME/.local/bin:$PATH" AISYNC_NO_NOTIFY=1
@@ -98,15 +102,15 @@ jobs:
   publish-pypi:
     # PyPI through Trusted Publishing: no token is stored. PyPI must have a publisher for
     # MaxonT/aisync + release.yml (set once on pypi.org). Runs only after the GitHub Release exists.
-    needs: release
+    needs: [release, install-check]   # a wheel that fails the clean-container install never reaches PyPI
     runs-on: ubuntu-latest
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: dist/

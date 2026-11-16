@@ -130,7 +130,8 @@ def history_items(root: Path, everything: bool = False):
         if not (ce == ae and cn != an):
             people.append(f"<{ce}>" if public(cn) else f"{cn} <{ce}>")
         if any(sha.startswith(k) for k in PUBLIC_COMMIT_MESSAGES):
-            body = ""
+            # only the lines that name the public npm scope are exempt; the rest of the message is scanned
+            body = "\n".join(l for l in body.splitlines() if "mingyang2026" not in l.lower())
         yield f"commit {sha[:8]}", "\n".join(people) + "\n" + body
 
 

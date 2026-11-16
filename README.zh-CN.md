@@ -17,7 +17,7 @@
 [![GHCR](https://img.shields.io/badge/GHCR-container-2496ED?logo=docker&logoColor=white)](https://github.com/MaxonT/aisync/pkgs/container/aisync)
 [![GitHub stars](https://img.shields.io/github/stars/MaxonT/aisync.svg?style=social)](https://github.com/MaxonT/aisync/stargazers)
 
-[English](README.md) · **中文** · [网站](https://maxont.github.io/aisync/) · [演示看板](https://maxont.github.io/aisync/board/)
+[English](README.md) · **中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [网站](https://maxont.github.io/aisync/) · [演示看板](https://maxont.github.io/aisync/board/)
 
 </div>
 
@@ -52,12 +52,10 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI（或 uv tool install aisync-cli）
-npx @mingyang2026/aisync-cli --version   # 📦 npm（运行同一个 PyPI 版本）
-brew install maxont/tap/aisync    # 🍺 Homebrew tap
+npx @mingyang2026/aisync-cli --version   # 📦 npm（当前 0.2.7，0.2.8 待发）
+brew install maxont/tap/aisync    # 🍺 Homebrew tap（先装 Python 3.14）
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
 ```
-
-第一次成功运行命令后，CLI 会问一次：`Star MaxonT/aisync on GitHub? [y/N]`。默认是不点，以后不会再问；在 CI、管道和脚本里不会出现。回答 y 会用你自己的 `gh` 登录点 star（没装 `gh` 就只打印链接）。设置 `NO_STAR_PROMPT=1` 可以跳过这个问题。
 
 ## 看一眼
 
@@ -119,9 +117,9 @@ aisync watch &         # 事件驱动的同步循环（或手动跑 aisync sync�
 agent 在一次会话里会这样用：
 
 ```bash
-aisync claim   -a codex -p api -f app/payments/ -m "升级 SDK"  # 3 = 有人占着
-aisync log     -a codex -p api -m "SDK 5.0，保留重试"
-aisync rule add -a codex --when "改 API" --do "带一个契约测试"
+aisync claim   -a codex -p api -f app/payments/ -m "SDK upgrade"  # 3 = 有人占着
+aisync log     -a codex -p api -m "SDK 5.0, retries kept"
+aisync rule add -a codex --when "changing an API" --do "add a contract test"
 aisync release -a codex -p api
 ```
 
@@ -168,10 +166,9 @@ aisync release -a codex -p api
   `rule rewrite` 按编号改写旧规则，改写丢了路径、数字或命令就拒绝。
 - **分层。** 把某个工具副本标成 `layer = "core"`：`core_topics` 全文保留，其余每个主题折成一行。
   提示词或工具调用碰到某个主题的关键词（`[shelf]`）时，hook 在本会话里把这个主题注入一次。
-  在作者自己的 hub 上，常驻规则从 20,673 降到 7,876 tokens；回放 7 天的会话记录，被折叠的规则
-  被真正引用的 189 次里，有 98.9% 在引用之前已经注入。
+  在作者自己的 hub 上，常驻规则从 20,673 降到 7,876 tokens。
 - **稳定前缀。** `progress_file` 把实时进度表移出共享页面，页面保持逐字节不变，提示缓存一直命中：
-  日志有新事件后的下一个会话，缓存读取从 13,060 变成 61,151 tokens。
+  日志有新事件后的下一个会话，仍然命中提示缓存。
 - **文员，不是清洁工。** `aisync tidy` 只提建议（重复、没人引用、超预算），从不改动；被取代的规则
   带着编号移进 `rules-archive.md`，什么都不删。
 - **任何 agent。** 三扇门：AGENTS.md 页面、CLI、`aisync mcp`（工具：rules、rule_add、log、claim、

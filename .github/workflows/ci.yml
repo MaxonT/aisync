@@ -3,6 +3,9 @@
 # How: runs on every push and pull request; locally: python3 -m pytest -q tests (pytest and mcp are test-only)
 name: ci
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
