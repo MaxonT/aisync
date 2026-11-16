@@ -1,5 +1,8 @@
 """aisync collaboration layer: shared rules any agent can update, claims, progress fan-out, report.
 
+Part of aisync, a local CLI for Multi-Agent Context Management, Coordination & Observability across
+AI coding tools (Claude Code, Codex, Cursor and more). Docs: https://maxont.github.io/aisync/
+
 What: the pieces that make the hub the one core every agent follows.
   - rule_add: any agent (Claude Code, Codex, Cursor, ...) adds a shared rule with one command; it
     lands in preferences.md (the truth) and the next cycle copies it to every tool.
