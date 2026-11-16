@@ -19,6 +19,7 @@ How:  every function here is called from core.run_cycle (isolated steps) or from
 """
 from __future__ import annotations
 
+import posixpath
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -333,13 +334,21 @@ def load_claims(cfg: core.Config) -> list[dict]:
     return out
 
 
+def _claim_path(path: str) -> str:
+    """Normalize project-relative claim spellings without accessing the filesystem."""
+    return posixpath.normpath(str(path).replace("\\", "/"))
+
+
 def _overlaps(a: dict, b: dict) -> bool:
     if a["project"] != b["project"] or a["agent"] == b["agent"]:
         return False
-    fa, fb = set(a.get("files") or []), set(b.get("files") or [])
-    if not fa or not fb:                         # a claim on the whole repo overlaps everything
+    fa = {_claim_path(f) for f in a.get("files") or []}
+    fb = {_claim_path(f) for f in b.get("files") or []}
+    # Empty file lists and the project root claim the whole repository.
+    if not fa or not fb or "." in fa or "." in fb:
         return True
-    return bool(fa & fb) or any(x.rstrip("/") + "/" in y or y.rstrip("/") + "/" in x for x in fa for y in fb)
+    return bool(fa & fb) or any(y.startswith(x.rstrip("/") + "/") or
+                              x.startswith(y.rstrip("/") + "/") for x in fa for y in fb)
 
 
 def find_overlaps(cfg: core.Config, agent: str, project: str, files) -> list[dict]:
@@ -350,7 +359,7 @@ def find_overlaps(cfg: core.Config, agent: str, project: str, files) -> list[dic
 def claim(cfg: core.Config, *, agent: str, project: str, summary: str, files=(), ttl_min: int = CLAIM_TTL_MIN) -> dict:
     if not (agent and project and summary):
         raise ValueError("claim needs --agent, --project and --summary")
-    files = [str(f) for f in files]
+    files = [_claim_path(f) for f in files]
     with core.locked(cfg):
         claims = [c for c in load_claims(cfg) if not (c["agent"] == agent and c["project"] == project)]
         new = {"agent": agent, "project": project, "files": files, "summary": summary.strip(),
