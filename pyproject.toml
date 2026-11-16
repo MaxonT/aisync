@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aisync-cli"
-version = "0.2.10"
+version = "0.2.11"
 description = "Multi-agent context management, coordination and observability for AI coding agents: shared rules written as When/Do/Not interfaces, a hash-chained journal, file claims, layered rule loading and mid-session news hooks for Claude Code, Codex and Cursor, plus an MCP server for any agent."
 readme = "README.md"
 license = { text = "MIT" }
@@ -31,6 +31,7 @@ Source = "https://github.com/MaxonT/aisync"
 
 [project.scripts]
 aisync = "ai_sync.cli:main"
+aisync-cli = "ai_sync.cli:main"
 
 [tool.setuptools]
 packages = ["ai_sync"]

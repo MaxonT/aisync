@@ -186,12 +186,28 @@ class InstallHooksCliTests(Base):
 class ReleaseTests(unittest.TestCase):
     def test_version_and_console_script(self):
         meta = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
-        self.assertEqual(meta["version"], "0.2.10")
+        self.assertEqual(meta["version"], "0.2.11")
         self.assertEqual(ai_sync.__version__, meta["version"])
         self.assertEqual(meta["name"], "aisync-cli")
-        self.assertEqual(meta["scripts"], {"aisync": "ai_sync.cli:main"})
+        # aisync-cli is an alias so `uvx aisync-cli` (what the MCP registry runs) finds an executable named like the package
+        self.assertEqual(meta["scripts"], {"aisync": "ai_sync.cli:main", "aisync-cli": "ai_sync.cli:main"})
         self.assertEqual(meta["dependencies"], [])
         self.assertEqual(meta["optional-dependencies"], {"mcp": ["mcp>=2.3,<3"]})
+
+    def test_mcp_registry_manifest_matches_the_release(self):
+        """server.json (official MCP registry) must name this version and the README must carry the ownership line."""
+        import json
+        meta = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
+        manifest = json.loads((ROOT / "server.json").read_text())
+        self.assertEqual(manifest["version"], meta["version"])
+        pkg = manifest["packages"][0]
+        self.assertEqual((pkg["registryType"], pkg["identifier"], pkg["version"]), ("pypi", meta["name"], meta["version"]))
+        self.assertEqual(pkg["transport"], {"type": "stdio"})
+        self.assertLessEqual(len(manifest["description"]), 100)
+        self.assertIn(f"<!-- mcp-name: {manifest['name']} -->", (ROOT / "README.md").read_text())
+        # the launch command is `uvx --with <extra> aisync-cli mcp`: the extra must be the one pyproject declares
+        self.assertEqual(pkg["runtimeArguments"], [{"type": "named", "name": "--with", "value": meta["optional-dependencies"]["mcp"][0]}])
+        self.assertEqual(pkg["packageArguments"], [{"type": "positional", "value": "mcp"}])
 
     def test_every_command_has_a_cli_test(self):
         commands = cli.build_parser()._subparsers._group_actions[0].choices

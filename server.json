@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.MaxonT/aisync",
+  "title": "aisync",
+  "description": "Multi-agent context management, coordination and observability for AI coding tools.",
+  "repository": {
+    "url": "https://github.com/MaxonT/aisync",
+    "source": "github"
+  },
+  "version": "0.2.11",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "aisync-cli",
+      "version": "0.2.11",
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {"type": "named", "name": "--with", "value": "mcp>=2.3,<3"}
+      ],
+      "packageArguments": [
+        {"type": "positional", "value": "mcp"}
+      ],
+      "transport": {"type": "stdio"}
+    }
+  ]
+}
