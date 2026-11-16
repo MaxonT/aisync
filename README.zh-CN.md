@@ -250,7 +250,7 @@ layer = "core"                                # 可选：非核心主题折叠�
 | [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | 会话中消息基于 Claude Code hooks：`aisync install-hooks` 在 ~/.claude/settings.json 里加 SessionStart、UserPromptSubmit、PostToolUse，`aisync hook claude-code` 只在别的工具改了东西时用 hookSpecificOutput.additionalContext 回话。 |
 | [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex 会读 ~/.codex/AGENTS.md，aisync 正是把共享规则块写在这里；它的 hooks.json 支持同样的 SessionStart / UserPromptSubmit / PostToolUse 事件，所以 `aisync hook codex` 复用 Claude Code 的回复格式。 |
 | [Cursor](https://cursor.com/docs/agent/hooks) | Cursor hooks（~/.cursor/hooks.json）在 sessionStart 送上规则和进度，在每次 postToolUse 之后通过 additional_context 送上消息，因为 Cursor 的 User Rules 存在应用内部，不是 aisync 能同步的文件。 |
-| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | 日志借用了 git 的哈希链：每条事件记下上一条的 id，自己的 id 是这条链接加内容的 SHA-256，所以 `aisync verify` 能发现任何被改、丢失或重排的行。hub 本身也是一个本地 git 仓库。 |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | 日志借用了 git 的哈希链：每条事件记下上一条的 id，自己的 id 是这条链接加内容的 SHA-256，所以 `aisync verify` 能发现被改的行，以及后面还有行指向的丢失或重排的行（删掉最后一行发现不了）。hub 本身也是一个本地 git 仓库。 |
 
 aisync 是独立项目，与上述项目没有隶属关系。
 

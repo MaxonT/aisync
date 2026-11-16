@@ -87,7 +87,7 @@ footer{margin-top:56px;color:var(--muted);font-size:14px}
 
 <div class="grid">
 <div class="card"><b>File claims</b>Before editing, an agent runs <code>aisync claim</code>. An overlapping claim exits with code 3, so the agent stops and coordinates instead of colliding.</div>
-<div class="card"><b>Hash-chained journal</b>Every decision, blocker and commit in one append-only log. Each event links to the one before it; <code>aisync verify</code> catches any edit.</div>
+<div class="card"><b>Hash-chained journal</b>Every decision, blocker and commit in one append-only log. Each event links to the one before it; <code>aisync verify</code> catches an edited event or a deleted one that a later event points at (not the last lines).</div>
 <div class="card"><b>Mid-session news</b>Claude Code, Codex and Cursor hooks tell a running session what the other tools just did. Silent when nothing changed, so a quiet hub costs no tokens.</div>
 <div class="card"><b>Shared rules</b>Any agent can add a rule with <code>aisync rule add</code>; every tool's own rule file gets it on the next sync.</div>
 </div>
