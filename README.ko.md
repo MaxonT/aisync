@@ -91,7 +91,7 @@ macOS 또는 Linux에서 Python 3.11 이상과 git이 필요합니다. 그 밖�
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI (or: uv tool install aisync-cli)
-npx @mingyang2026/aisync-cli --version   # 📦 npm (0.2.7 now; 0.2.8 pending)
+npx @mingyang2026/aisync-cli --version   # npm 0.2.8 (0.2.9 pending)
 brew install maxont/tap/aisync    # 🍺 Homebrew tap (Python 3.14 first)
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
 ```

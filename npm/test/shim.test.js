@@ -72,7 +72,9 @@ test("end to end: the real uvx fetches the pinned PyPI release", { timeout: 1800
     t.skip(`aisync-cli ${pkg.version} is not on PyPI yet`);
     return;
   }
-  const r = spawnSync(process.execPath, [BIN, "--version"], { encoding: "utf8", timeout: 170000 });
+  // no uv cache: a stale negative lookup on this machine must not hide the PyPI release
+  const r = spawnSync(process.execPath, [BIN, "--version"],
+    { encoding: "utf8", timeout: 170000, env: { ...process.env, UV_NO_CACHE: "1" } });
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.stdout.trim(), `aisync ${pkg.version}`);
 });

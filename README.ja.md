@@ -92,7 +92,7 @@ Python 3.11 以上と git が必要です（macOS または Linux）。それ以
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI (or: uv tool install aisync-cli)
-npx @mingyang2026/aisync-cli --version   # 📦 npm (0.2.7 now; 0.2.8 pending)
+npx @mingyang2026/aisync-cli --version   # npm 0.2.8 (0.2.9 pending)
 brew install maxont/tap/aisync    # 🍺 Homebrew tap (Python 3.14 first)
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
 ```
@@ -246,7 +246,7 @@ layer = "core"                                # optional: fold non-core topics, 
 
 ## 先人の肩の上に立って
 
-> aisync: Multi-Agent Context Management, Coordination & Observability. AGENTS.md was the starting idea.
+> aisync：マルチエージェントのコンテキスト管理・連携・可観測性。AGENTS.md が出発点でした。
 
 | プロジェクト | aisync への影響 |
 |---|---|

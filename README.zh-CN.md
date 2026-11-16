@@ -26,11 +26,37 @@
 > aisync 是一个**本地、可校验的中枢**（`~/.ai-sync/`，一个 git 仓库）。它把每个工具的规则、经验和实时状态
 > 放在一处（谁在改哪个文件、别的工具刚做了什么），只把正在运行的会话需要的那部分送进去。
 >
-> - **拦得住，不只是提醒：** 改文件之前 agent 要先**认领**，认领撞车时命令返回退出码 3。
-> - **可校验：** 每个决定、受阻和提交都记进**哈希链日志**，`aisync verify` 能发现任何篡改。
-> - **只送相关的：** hook 注入别的工具刚做的事；没有新消息时一个字都不说。
+> - **协作式认领：** 文件认领是协作式的，不是操作系统强制的锁：agent 必须使用认领协议；撞车时命令返回退出码 3。
+> - **可校验：** 每个决定、受阻和提交都记进**哈希链日志**。`aisync verify` 能发现已记录事件的改动，但不能证明每个声明的操作都真的发生过。
+> - **只送相关的：** hook 注入别的工具刚做的事，有新消息时才注入。
 
 <p align="center"><img src="docs/assets/cli.zh.png" alt="在终端里运行 aisync：渐变的 AISYNC 像素大字，下面按「开始、每次会话、查看、精简规则、保持运行」分组列出所有命令" width="720"></p>
+
+## 适合谁用
+
+同时运行 **两个或更多 AI 编程 agent** 的开发者，尤其是 agent 会并发工作、交接任务，或需要一份共享的决定与受阻记录的时候。aisync 不是又一个编程 agent，也不是任务编排器：它是这些 agent 可以共用的**共享上下文与协调层**。
+
+## 看一眼
+
+<div align="center">
+
+### The Agent Swarm Floor：一层楼的 agent 在协作
+
+<video src="https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d" width="360" controls></video>
+
+</div>
+
+
+## 集成方式：原生 hook 不是兼容的边界
+
+| 集成方式 | 谁能用 | 能期待什么 |
+|---|---|---|
+| **原生 hook** | Claude Code、Codex、Cursor | 在支持的 hook 事件上自动送达上下文和消息，并可使用 aisync 的协调与日志命令 |
+| **MCP 服务器** | 兼容 MCP 的 agent | 暴露规则、规则新增、日志、认领、释放、消息、状态和整理；需要 agent 主动调用工具 |
+| **CLI** | 能运行 shell 命令的 agent | 直接调用中枢操作，例如 `aisync claim`、`aisync news`、`aisync log` 和 `aisync verify` |
+| **共享指令文件** | 会读取受支持指令文件的 agent | 只提供常驻规则和上下文；不提供会话中的自动消息或文件认领强制 |
+
+**兼容不等于自动集成。** 没有原生 hook 的 agent，功能取决于它如何使用 MCP/CLI 以及它的配置。aisync 不会自动拦截所有编辑，也不保证每个 agent 都会遵守文件认领。
 
 ## 安装
 
@@ -52,22 +78,12 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI（或 uv tool install aisync-cli）
-npx @mingyang2026/aisync-cli --version   # 📦 npm（当前 0.2.7，0.2.8 待发）
+npx @mingyang2026/aisync-cli --version   # npm 0.2.8 (0.2.9 pending)
 brew install maxont/tap/aisync    # 🍺 Homebrew tap（先装 Python 3.14）
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
 ```
 
-## 看一眼
-
-<div align="center">
-
-### The Agent Swarm Floor：一层楼的 agent 在协作
-
-<video src="https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d" width="360" controls></video>
-
-<sub>42 秒 · 示意动画，数据为合成演示 · 建议打开声音 · <a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">播放器打不开？直接打开视频</a></sub>
-
-</div>
+### 两个 agent，同一个文件
 
 <div align="center">
 
@@ -81,15 +97,15 @@ docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
 
 </div>
 
-| | 规则同步工具 | aisync |
-|---|---|---|
-| **认领** | 没有：两个 agent 可以同时改同一个文件 | 先 `aisync claim`；撞车返回退出码 3，并告诉你谁占着这些文件 |
-| **日志** | 没有“谁做了什么”的共同记录 | 一本只追加、哈希链接的日志，记提交、决定和受阻（`aisync verify` 校验） |
-| **会话中消息** | 规则只在会话开始时加载，之后就没声了 | hook 把别的工具刚做的事注入正在运行的会话 |
+| 多智能体需求 | aisync 提供什么 |
+|---|---|
+| **上下文管理** | 三方同步的规则、分层的规则加载，以及通过 hook 送达的相关会话中消息 |
+| **多智能体协调** | 协作式的文件认领与释放、撞车检测（退出码 3）、受阻与活动更新 |
+| **可观测与校验** | 哈希链事件日志、`aisync verify`、`status`、`report`、`tail` 以及静态 `board` 看板 |
 
 规则同步 aisync 也做：一份规则块复制进每个工具自己的规则文件，三方同步，有冲突绝不覆盖。
 
-**自己先用过：** 7 个 AI 工具、4 周、6,700+ 条日志事件。
+**自己先用过：** 作者自己的 hub 上有 6,700+ 条日志事件。
 
 ## 为什么不只用 AGENTS.md？
 
@@ -226,7 +242,7 @@ layer = "core"                                # 可选：非核心主题折叠�
 
 ## 站在这些项目的肩膀上
 
-> aisync：AGENTS.md 管 agent 该怎么做，aisync 管多个 AI 工具此刻怎么配合。
+> aisync：多智能体上下文管理、协调与可观测性。AGENTS.md 是最初的出发点。
 
 | 项目 | 对 aisync 的影响 |
 |---|---|
@@ -249,3 +265,16 @@ python3 -m unittest discover -s tests   # 含 wheel -> 全新 venv -> demo
 上面的致谢来自 [`.github/refine/lineage.json`](.github/refine/lineage.json)。所有演示数据都是合成的。
 
 MIT 许可证。
+
+## 更多视频（如果你想看）
+
+https://github.com/user-attachments/assets/5ea7928b-4985-4700-8551-90477a84df40
+
+https://github.com/user-attachments/assets/91385ac4-714c-4a16-908b-1859ef1c78e2
+
+
+https://github.com/user-attachments/assets/bf661d5c-b7b1-4876-8469-2e11dd95b232
+
+
+
+https://github.com/user-attachments/assets/d32f3abd-2986-4fbf-83a2-be287f0185a7

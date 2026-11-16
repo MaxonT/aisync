@@ -38,7 +38,7 @@ class ReadmeTests(unittest.TestCase):
     def test_chinese_readme_mirrors_the_order(self):
         order = ["docs/assets/banner.zh.svg", "[!NOTE]", "互相看不见", "## 安装",
                  "install aisync for me.", "install.sh | bash", "docs/assets/demo.zh.gif",
-                 "| **认领** |", "| **日志** |", "| **会话中消息** |", "6,700+"]
+                 "| **上下文管理** |", "| **多智能体协调** |", "| **可观测与校验** |", "6,700+"]
         pos = [README_ZH.find(s) for s in order]
         self.assertNotIn(-1, pos, [s for s, p in zip(order, pos) if p < 0])
         self.assertEqual(pos, sorted(pos))

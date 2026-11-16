@@ -92,7 +92,7 @@ Requer Python 3.11+ e git, em macOS ou Linux. Nada além disso: o aisync usa ape
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI (or: uv tool install aisync-cli)
-npx @mingyang2026/aisync-cli --version   # 📦 npm (0.2.7 now; 0.2.8 pending)
+npx @mingyang2026/aisync-cli --version   # npm 0.2.8 (0.2.9 pending)
 brew install maxont/tap/aisync    # 🍺 Homebrew tap (Python 3.14 first)
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
 ```
@@ -253,7 +253,7 @@ apague as entradas `PreToolUse` e `SessionEnd` cujo comando termina em ` guard` 
 
 ## Apoiado nos ombros de gigantes
 
-> aisync: Multi-Agent Context Management, Coordination & Observability. AGENTS.md was the starting idea.
+> aisync: Gerenciamento de Contexto, Coordenação e Observabilidade Multiagente. O AGENTS.md foi a ideia inicial.
 
 | Projeto | Como moldou o aisync |
 |---|---|
