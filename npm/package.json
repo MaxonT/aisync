@@ -1,5 +1,5 @@
 {
-  "name": "aisync-cli",
+  "name": "@mingyang2026/aisync-cli",
   "version": "0.2.7",
   "description": "aisync: shared rules, journal and claims for every AI coding tool. This npm package runs the PyPI release (aisync-cli) through uvx or pipx.",
   "license": "MIT",
