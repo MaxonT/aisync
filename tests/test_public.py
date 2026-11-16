@@ -186,7 +186,7 @@ class InstallHooksCliTests(Base):
 class ReleaseTests(unittest.TestCase):
     def test_version_and_console_script(self):
         meta = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
-        self.assertEqual(meta["version"], "0.2.8")
+        self.assertEqual(meta["version"], "0.2.9")
         self.assertEqual(ai_sync.__version__, meta["version"])
         self.assertEqual(meta["name"], "aisync-cli")
         self.assertEqual(meta["scripts"], {"aisync": "ai_sync.cli:main"})

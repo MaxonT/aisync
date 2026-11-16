@@ -141,3 +141,13 @@ class InstallMethodTests(unittest.TestCase):
     def test_homebrew_python_site_packages_is_pip_not_brew(self):
         self.assertEqual(update.install_method("/opt/homebrew/lib/python3.12/site-packages/ai_sync/update.py"), "pip")
         self.assertEqual(update.install_method("/opt/homebrew/Cellar/aisync/0.2.8/libexec/lib/ai_sync/update.py"), "brew")
+
+
+class GithubNpmJobTests(unittest.TestCase):
+    def test_github_npm_job_uses_only_the_token_and_publishes_after_release(self):
+        text = (Path(__file__).resolve().parents[1] / ".github/workflows/release.yml").read_text()
+        job = text[text.index("  publish-github-npm:"):]
+        self.assertIn("needs: release", job)
+        self.assertIn("packages: write", job)
+        self.assertIn("npm.pkg.github.com", job)
+        self.assertNotIn("secrets.", job)
