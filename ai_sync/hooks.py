@@ -90,11 +90,13 @@ def _prune_cursors(cfg: core.Config) -> None:
             pass
 
 
-def news(cfg: core.Config, agent: str, session: str = "", init_only: bool = False) -> dict:
+def news(cfg: core.Config, agent: str, session: str = "", init_only: bool = False, last: int = 0) -> dict:
     """New events from other agents + new shared rules since this session's cursor.
 
     The first call of a session only sets the cursor (the session already loaded the full
     progress page at start). `init_only` does the same on purpose (SessionStart hooks).
+    When `last > 0` on the first call (and not `init_only`), also return the last `last`
+    events from other agents before setting the cursor.
     """
     events = core.read_events(cfg)
     rules = _rules(cfg)
@@ -115,6 +117,8 @@ def news(cfg: core.Config, agent: str, session: str = "", init_only: bool = Fals
         if "instincts" in cur and not ierr:        # old cursors without the key: nothing to compare, say nothing
             seen_inst = {_habit(l) for l in cur["instincts"]}            # renumbering a line is not news
             new_inst = [l for l in ilines if _habit(l) not in seen_inst]
+    elif cur is None and not init_only and last > 0:
+        fresh = [e for e in events if e.get("agent") != agent][-last:]
     prev = cur or {}
     keep = prev.get("instincts", ilines) if ierr else ilines          # an unreadable file keeps what was seen
     err_changed = bool(ierr) and ierr != prev.get("instincts_err", "") and cur is not None and not init_only
