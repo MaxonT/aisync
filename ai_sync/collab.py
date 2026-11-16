@@ -333,13 +333,27 @@ def load_claims(cfg: core.Config) -> list[dict]:
     return out
 
 
+def _covers(parent: str, child: str) -> bool:
+    """True when a directory claim on ``parent`` contains the path ``child``.
+
+    A claim ``x`` covers ``y`` when ``y`` equals ``x`` or lies beneath it,
+    compared by whole path segment. The earlier substring test wrongly flagged
+    e.g. ``docs`` against ``mydocs/x.md``, because ``"docs/" in "mydocs/x.md"``
+    is true for a substring but the two are in different directories.
+    """
+    parent, child = parent.rstrip("/"), child.rstrip("/")
+    return child == parent or child.startswith(parent + "/")
+
+
 def _overlaps(a: dict, b: dict) -> bool:
     if a["project"] != b["project"] or a["agent"] == b["agent"]:
         return False
     fa, fb = set(a.get("files") or []), set(b.get("files") or [])
     if not fa or not fb:                         # a claim on the whole repo overlaps everything
         return True
-    return bool(fa & fb) or any(x.rstrip("/") + "/" in y or y.rstrip("/") + "/" in x for x in fa for y in fb)
+    return bool(fa & fb) or any(
+        _covers(x, y) or _covers(y, x) for x in fa for y in fb
+    )
 
 
 def find_overlaps(cfg: core.Config, agent: str, project: str, files) -> list[dict]:

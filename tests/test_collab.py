@@ -134,6 +134,17 @@ class ClaimTests(CollabBase):
         self.assertEqual(self.run_cli("release", "-a", "cursor")[0], 0)
         self.assertNotIn("cursor", self.run_cli("claims")[1])
 
+    def test_overlap_matches_path_prefix_not_substring(self):
+        # Issue #31: a claimed directory must match a whole path segment, not a
+        # substring. ``docs`` must not overlap ``mydocs/x.md``, and ``src`` must
+        # not overlap ``lib/src/a.py``.
+        collab.claim(self.cfg, agent="cursor", project="webapp", summary="s", files=["docs", "src"])
+        self.assertEqual(collab.find_overlaps(self.cfg, "trae", "webapp", ["mydocs/x.md"]), [])
+        self.assertEqual(collab.find_overlaps(self.cfg, "trae", "webapp", ["lib/src/a.py"]), [])
+        # A real child path, and an exact claim, still overlap.
+        self.assertTrue(collab.find_overlaps(self.cfg, "trae", "webapp", ["docs/guide.md"]))
+        self.assertTrue(collab.find_overlaps(self.cfg, "trae", "webapp", ["src"]))
+
     def test_expired_claims_disappear(self):
         collab.claim(self.cfg, agent="cursor", project="p", summary="s", ttl_min=-1)
         self.assertEqual(collab.load_claims(self.cfg), [])
