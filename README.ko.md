@@ -125,7 +125,7 @@ aisync는 규칙 관리도 담당합니다. 규칙 블록 하나를 각 도구�
 | 범위 | 저장소에서 작업하는 에이전트를 위한 상시 지침 | 설정된 에이전트와 저장소 전반에 걸친 공유 허브 |
 | 언제 읽히나 | 세션이 시작될 때 | 시작할 때, 그리고 훅을 통해 세션 중에도 |
 | 누가 무엇을 편집하나 | 다루지 않음 | 협력적 클레임: 겹치면 호출자에게 종료 코드 3을 반환 |
-| 변조 증거 | 파일 형식이 제공하지 않음 | 해시 체인 저널: `aisync verify`가 기록된 이벤트의 변경을 감지 |
+| 변조 증거 | 파일 형식이 제공하지 않음 | 해시 체인 저널: `aisync verify`가 기록된 이벤트의 변경과, 뒤 이벤트가 가리키는 삭제를 감지(마지막 몇 줄은 제외) |
 | 세션당 컨텍스트 | 매번 파일 전체 | 트리거된 규칙만: 상시 로드 규칙 20,673 → 7,876 토큰* |
 
 <sub>\* 작성자 본인의 허브에서 한 번 측정한 값입니다(2026-11-08). 계층형 로딩 전과 후의 상시 로드 규칙 크기입니다. 한 대의 기계에서 잰 값이며 벤치마크가 아닙니다. 여러분의 수치는 다를 수 있습니다. `aisync tidy`는 여러분 자신의 규칙 예산과 인용되지 않는 규칙을 보고합니다.</sub>
@@ -250,7 +250,7 @@ layer = "core"                                # optional: fold non-core topics, 
 | [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | 세션 중 뉴스는 Claude Code 훅으로 전달됩니다. `aisync install-hooks`는 ~/.claude/settings.json에 SessionStart, UserPromptSubmit, PostToolUse 항목을 추가하며, `aisync hook claude-code`는 다른 도구가 무언가 바꿨을 때에만 hookSpecificOutput.additionalContext로 응답합니다. |
 | [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex는 ~/.codex/AGENTS.md를 읽으며, aisync는 여기에 공유 규칙 블록을 심습니다. Codex의 hooks.json도 같은 SessionStart / UserPromptSubmit / PostToolUse 이벤트를 받으므로, `aisync hook codex`는 Claude Code 응답 형식을 그대로 재사용합니다. |
 | [Cursor](https://cursor.com/docs/agent/hooks) | Cursor 훅(~/.cursor/hooks.json)은 sessionStart에서 규칙과 진행 상황을, 각 postToolUse 후에 뉴스를 additional_context로 전달합니다. Cursor의 사용자 규칙은 aisync가 동기화할 수 있는 파일이 아니라 앱 안에 있기 때문입니다. |
-| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | 저널은 git의 해시 체인을 빌려 씁니다. 모든 이벤트는 바로 앞 이벤트의 id를 저장하고, 자신의 id는 그 연결과 본문의 SHA-256입니다. 그래서 `aisync verify`는 편집되거나, 유실되거나, 순서가 바뀐 줄을 찾아냅니다. 허브 자체는 로컬 git 저장소입니다. |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | 저널은 git의 해시 체인을 빌려 씁니다. 모든 이벤트는 바로 앞 이벤트의 id를 저장하고, 자신의 id는 그 연결과 본문의 SHA-256입니다. 그래서 `aisync verify`는 편집되거나, 유실되거나, 순서가 바뀐 줄을 찾아냅니다(뒤 줄이 가리키는 경우에 한하며, 마지막 줄 삭제는 찾지 못합니다). 허브 자체는 로컬 git 저장소입니다. |
 
 aisync는 독립 프로젝트이며, 위의 프로젝트들과 제휴 관계가 없습니다.
 

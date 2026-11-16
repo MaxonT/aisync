@@ -126,7 +126,7 @@ Behalten Sie AGENTS.md für die dauerhaften Anweisungen eines Repos. aisync erg�
 | Umfang | Dauerhafte Anweisungen für Agenten, die in einem Repo arbeiten | Ein gemeinsamer Hub über konfigurierte Agenten und Repositories |
 | Wann gelesen | Beim Start einer Sitzung | Beim Start und mitten in der Sitzung über Hooks |
 | Wer bearbeitet was | Nicht abgedeckt | Kooperative Claims: eine Überschneidung liefert dem Aufrufer Exit 3 |
-| Manipulationsnachweis | Vom Dateiformat nicht bereitgestellt | Hash-verkettetes Journal: `aisync verify` erkennt Änderungen an aufgezeichneten Ereignissen |
+| Manipulationsnachweis | Vom Dateiformat nicht bereitgestellt | Hash-verkettetes Journal: `aisync verify` erkennt Änderungen an aufgezeichneten Ereignissen und gelöschte Ereignisse, auf die ein späteres zeigt (nicht die letzten Zeilen) |
 | Kontext pro Sitzung | Ganze Datei, jedes Mal | Nur ausgelöste Regeln: immer geladene Regeln 20,673 → 7,876 Tokens* |
 
 <sub>\* Einmalig gemessen auf dem eigenen Hub eines Autors (2026-11-08), immer geladene Regeln vor und nach dem geschichteten Laden. Eine Maschine, kein Benchmark: Ihre Zahlen werden abweichen. `aisync tidy` meldet Ihr eigenes Regelbudget und die nicht zitierten Regeln.</sub>
@@ -249,7 +249,7 @@ Damit `aisync watch` läuft, starten Sie es aus Ihren Anmeldeobjekten, einer sys
 | [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | Meldungen mitten in der Sitzung laufen über Claude-Code-Hooks: `aisync install-hooks` fügt SessionStart-, UserPromptSubmit- und PostToolUse-Einträge zu ~/.claude/settings.json hinzu, und `aisync hook claude-code` antwortet mit hookSpecificOutput.additionalContext nur, wenn ein anderes Tool etwas geändert hat. |
 | [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex liest ~/.codex/AGENTS.md; dort legt aisync den gemeinsamen Regelblock ab. Seine hooks.json kennt dieselben Ereignisse SessionStart / UserPromptSubmit / PostToolUse, daher nutzt `aisync hook codex` das Antwortformat von Claude Code wieder. |
 | [Cursor](https://cursor.com/docs/agent/hooks) | Cursor-Hooks (~/.cursor/hooks.json) liefern Regeln und Fortschritt beim sessionStart und die Meldungen nach jedem postToolUse über additional_context, weil die User Rules von Cursor in der App selbst liegen und nicht in einer Datei, die aisync synchronisieren könnte. |
-| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | Das Journal übernimmt die Hash-Kette von git: Jedes Ereignis speichert die ID des vorherigen, und seine eigene ID ist ein SHA-256 aus dieser Verknüpfung plus Inhalt, sodass `aisync verify` jede geänderte, verlorene oder umgeordnete Zeile erkennt. Der Hub selbst ist ein lokales Git-Repo. |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | Das Journal übernimmt die Hash-Kette von git: Jedes Ereignis speichert die ID des vorherigen, und seine eigene ID ist ein SHA-256 aus dieser Verknüpfung plus Inhalt, sodass `aisync verify` jede geänderte Zeile und jede verlorene oder umgeordnete Zeile erkennt, auf die eine spätere zeigt (eine gelöschte letzte Zeile wird nicht erkannt). Der Hub selbst ist ein lokales Git-Repo. |
 
 aisync ist ein unabhängiges Projekt und nicht mit den oben genannten Projekten verbunden.
 

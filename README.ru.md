@@ -127,7 +127,7 @@ AGENTS.md оставьте для постоянных инструкций ре
 | Область действия | Постоянные инструкции для агентов, работающих в репозитории | Общий хаб для настроенных агентов и репозиториев |
 | Когда читается | При старте сессии | В начале и посреди сессии через хуки |
 | Кто что редактирует | Не покрывается | Кооперативные claim-ы: пересечение возвращает вызывающему код 3 |
-| Защита от подмены | Формат файла её не даёт | Журнал с хеш-цепочкой: `aisync verify` обнаруживает изменения записанных событий |
+| Защита от подмены | Формат файла её не даёт | Журнал с хеш-цепочкой: `aisync verify` обнаруживает изменения записанных событий и удалённые события, на которые указывает следующее (не последние строки) |
 | Контекст на сессию | Весь файл каждый раз | Только сработавшие правила: постоянно загруженные правила 20,673 → 7,876 токенов* |
 
 <sub>\* Измерено однократно в собственном хабе одного автора (2026-11-08): постоянно загруженные правила до и после многоуровневой загрузки. Одна машина, это не бенчмарк: ваши цифры будут другими. `aisync tidy` показывает ваш бюджет правил и правила, на которые никто не ссылается.</sub>
@@ -261,7 +261,7 @@ layer = "core"                                # optional: fold non-core topics, 
 | [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | Новости посреди сессии передаются через хуки Claude Code: `aisync install-hooks` добавляет записи SessionStart, UserPromptSubmit и PostToolUse в ~/.claude/settings.json, а `aisync hook claude-code` отвечает hookSpecificOutput.additionalContext только тогда, когда другой инструмент что-то изменил. |
 | [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex читает ~/.codex/AGENTS.md, куда aisync записывает блок общих правил, а его hooks.json принимает те же события SessionStart / UserPromptSubmit / PostToolUse, поэтому `aisync hook codex` использует тот же формат ответа, что и Claude Code. |
 | [Cursor](https://cursor.com/docs/agent/hooks) | Хуки Cursor (~/.cursor/hooks.json) доставляют правила и прогресс на sessionStart, а новости после каждого postToolUse через additional_context, потому что User Rules Cursor живут внутри приложения, а не в файле, который aisync мог бы синхронизировать. |
-| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | Журнал заимствует хеш-цепочку git: каждое событие хранит id предыдущего и собственный id, который является SHA-256 от этой связи и тела, поэтому `aisync verify` замечает любую изменённую, потерянную или переставленную строку. Сам хаб — локальный git-репозиторий. |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | Журнал заимствует хеш-цепочку git: каждое событие хранит id предыдущего и собственный id, который является SHA-256 от этой связи и тела, поэтому `aisync verify` замечает изменённую строку, а также потерянную или переставленную, на которую указывает следующая (удалённая последняя строка не обнаруживается). Сам хаб — локальный git-репозиторий. |
 
 aisync — независимый проект, не связанный с перечисленными выше.
 
