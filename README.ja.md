@@ -127,7 +127,7 @@ aisync はルールの部分も担当します。1つのルールブロックを
 | 適用範囲 | リポジトリで作業するエージェントへの常設指示 | 設定された複数のエージェントとリポジトリにまたがる共有ハブ |
 | 読まれるタイミング | セッション開始時 | 開始時に加え、フックによりセッション中にも |
 | 誰が何を編集しているか | 対象外 | 協調型の claim。重複すると呼び出し元に終了コード 3 を返す |
-| 改ざんの証拠 | ファイル形式では提供されない | ハッシュチェーンのジャーナル。`aisync verify` が記録済みイベントの改変を検出 |
+| 改ざんの証拠 | ファイル形式では提供されない | ハッシュチェーンのジャーナル。`aisync verify` が記録済みイベントの改変と、後続イベントが指す削除を検出（最後の数行は対象外） |
 | セッションごとのコンテキスト | ファイル全体を毎回読み込む | トリガーされたルールのみ: 常時読み込みルールは 20,673 → 7,876 トークン* |
 
 <sub>\* 1人の作者のハブで1回測定（2026-11-08）。階層的な読み込みの前後で、常時読み込みルールのトークン数を比較したものです。1台のマシンでの値であり、ベンチマークではありません。お使いの環境では数値が異なります。`aisync tidy` は、お使いのルール予算と、どこからも参照されていないルールを報告します。</sub>
@@ -254,7 +254,7 @@ layer = "core"                                # optional: fold non-core topics, 
 | [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | セッション中のニュースは Claude Code のフックに乗ります。`aisync install-hooks` は ~/.claude/settings.json に SessionStart、UserPromptSubmit、PostToolUse のエントリを追加し、`aisync hook claude-code` は他のツールが何かを変えたときだけ hookSpecificOutput.additionalContext で応答します。 |
 | [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex は ~/.codex/AGENTS.md を読みます。aisync はそこに共有ルールブロックを用意します。また Codex の hooks.json は同じ SessionStart / UserPromptSubmit / PostToolUse のイベントを受け取るため、`aisync hook codex` は Claude Code と同じ応答形式を再利用します。 |
 | [Cursor](https://cursor.com/docs/agent/hooks) | Cursor のフック（~/.cursor/hooks.json）は、sessionStart でルールと進捗を、postToolUse の後にニュースを additional_context で配信します。Cursor のユーザールールはアプリ内にあり、aisync が同期できるファイルではないためです。 |
-| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | ジャーナルは git のハッシュチェーンを借りています。各イベントは直前のイベントの ID を保存し、自分の ID はそのリンクと本体の SHA-256 です。そのため `aisync verify` は、編集・欠落・順序の入れ替えられた行を検出できます。ハブ自体はローカルの git リポジトリです。 |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | ジャーナルは git のハッシュチェーンを借りています。各イベントは直前のイベントの ID を保存し、自分の ID はそのリンクと本体の SHA-256 です。そのため `aisync verify` は、編集・欠落・順序の入れ替えられた行を検出できます（ただし後続の行が指すものに限り、最後の行の削除は検出されません）。ハブ自体はローカルの git リポジトリです。 |
 
 aisync は独立したプロジェクトであり、上記のプロジェクトとの提携関係はありません。
 
