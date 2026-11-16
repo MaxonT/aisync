@@ -267,7 +267,7 @@ python3 -m unittest discover -s tests   # 含 wheel -> 全新 venv -> demo
 **参与贡献。** 见 [CONTRIBUTING.md](CONTRIBUTING.md)。可以直接接手的活：
 [good first issue](https://github.com/MaxonT/aisync/issues?q=is%3Aopen+label%3A%22good+first+issue%22) 和
 [help wanted](https://github.com/MaxonT/aisync/issues?q=is%3Aopen+label%3A%22help+wanted%22)。已知缺口都带复现步骤开成了 issue，
-例如 [#23](https://github.com/MaxonT/aisync/issues/23)（`verify` 查不出被删的最后一行）。
+例如 [#23](https://github.com/MaxonT/aisync/issues/23)（`verify` 查不出被删的最后一行）。问题和想法请到 [Discussions](https://github.com/MaxonT/aisync/discussions)。
 
 MIT 许可证。
 
