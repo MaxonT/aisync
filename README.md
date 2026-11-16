@@ -36,7 +36,7 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 > - **Multi-agent coordination:** declare file claims, detect overlapping claims (exit code 3), release ownership, and surface blockers and other agents' activity.
 > - **Observability & verification:** inspect agent activity, blockers, and health through the journal, status reports, and board; `aisync verify` checks the journal's hash chain for tampering.
 >
-> File claims are **cooperative**, not OS-enforced locks: agents must use the claim protocol. Hash-chain verification detects changes to recorded events; it does not prove every claimed action occurred.
+> File claims are **cooperative**, not OS-enforced locks: agents must use the claim protocol. Hash-chain verification detects an edited event or a deleted one that a later event points at; it does not detect deleting the last line(s) of the journal (tested on 0.2.10; keep the hub in git to catch that), and it does not prove every claimed action occurred.
 
 ## Who it's for
 
@@ -125,7 +125,7 @@ Keep AGENTS.md for a repo's standing instructions. aisync sits beside it and cov
 | Scope | Standing instructions for agents working in a repo | A shared hub across configured agents and repositories |
 | When it is read | When a session starts | At start, and mid-session through hooks |
 | Who is editing what | Not covered | Cooperative claims: an overlap returns exit 3 to the caller |
-| Tamper evidence | Not provided by the file format | Hash-chained journal: `aisync verify` detects alterations to recorded events |
+| Tamper evidence | Not provided by the file format | Hash-chained journal: `aisync verify` detects edited events and deleted events that a later event points at (not the last lines) |
 | Context per session | Whole file, every time | Triggered rules only: always-loaded rules 20,673 → 7,876 tokens* |
 
 <sub>\* Measured once on one author's own hub (2026-11-08), always-loaded rules before and after layered loading. One machine, not a benchmark: your numbers will differ. `aisync tidy` reports your own rule budget and uncited rules.</sub>
@@ -266,7 +266,7 @@ delete the `PreToolUse` and `SessionEnd` entries whose command ends in ` guard` 
 | [![Claude Code stars](https://img.shields.io/github/stars/anthropics/claude-code?style=social&label=Claude%20Code)](https://github.com/anthropics/claude-code) | Mid-session news rides on Claude Code hooks: `aisync install-hooks` adds SessionStart, UserPromptSubmit and PostToolUse entries to ~/.claude/settings.json, and `aisync hook claude-code` answers with hookSpecificOutput.additionalContext only when another tool changed something. |
 | [![Codex stars](https://img.shields.io/github/stars/openai/codex?style=social&label=Codex)](https://github.com/openai/codex) | Codex reads ~/.codex/AGENTS.md, which is where aisync seeds the shared rules block, and its hooks.json takes the same SessionStart / UserPromptSubmit / PostToolUse events, so `aisync hook codex` reuses the Claude Code reply format. |
 | [Cursor](https://cursor.com/docs/agent/hooks) | Cursor hooks (~/.cursor/hooks.json) deliver the rules and progress at sessionStart and the news after each postToolUse through additional_context, because Cursor's User Rules live inside the app instead of a file aisync could sync. |
-| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | The journal borrows git's hash chain: every event stores the id of the one before it and its own id is a SHA-256 of that link plus its body, so `aisync verify` spots any edited, lost or reordered line. The hub itself is a local git repo. |
+| [![git stars](https://img.shields.io/github/stars/git/git?style=social&label=git)](https://github.com/git/git) | The journal borrows git's hash chain: every event stores the id of the one before it and its own id is a SHA-256 of that link plus its body, so `aisync verify` spots an edited line, or a lost or reordered line that a later line points at (a deleted last line is not caught). The hub itself is a local git repo. |
 
 aisync is an independent project, not affiliated with the projects above.
 
