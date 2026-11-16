@@ -124,3 +124,14 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("pypa/gh-action-pypi-publish@release/v1", job)
         self.assertNotIn("password", job)
         self.assertNotIn("PYPI_TOKEN", job)
+
+
+class RuleListTopicTests(unittest.TestCase):
+    def test_empty_topic_says_why_and_exits_1(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"AISYNC_HOME": d}):
+            run_cli("init")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                code = cli.main(["rule", "list", "--topic", "no-such-topic"])
+            self.assertEqual(code, 1)
+            self.assertIn("no rules under topic 'no-such-topic'", err.getvalue())
