@@ -4,7 +4,7 @@ What: `aisync mcp` serves eight tools over stdio: rules, rule_add, log, claim, r
 Why:  owner 2026-11-08: any AI agent should be able to use ai-sync at a glance, not only the tools we wrote
       adapters for. The three universal doors are AGENTS.md (a [[target]] file), the CLI, and this server.
 How:  the tool functions below are plain Python over collab/core (tested without MCP installed); build() wraps
-      them with the official SDK's MCPServer (`pip install 'aisync[mcp]'`, mcp>=2.3). Nothing here prints to
+      them with the official SDK's MCPServer (`pip install 'aisync-cli[mcp]'`, mcp>=2.3). Nothing here prints to
       stdout outside the protocol.
 """
 from __future__ import annotations
@@ -112,11 +112,11 @@ TOOLS = (rules, rule_add, log, claim, release, news, status, tidy)
 
 
 def build():
-    """The MCPServer with every tool registered (needs `pip install 'aisync[mcp]'`)."""
+    """The MCPServer with every tool registered (needs `pip install 'aisync-cli[mcp]'`)."""
     try:
         from mcp.server.mcpserver import MCPServer
     except ImportError as ex:                      # mcp missing or a 1.x install
-        raise RuntimeError("the MCP server needs the official SDK: pip install 'aisync[mcp]' (mcp>=2.3)") from ex
+        raise RuntimeError("the MCP server needs the official SDK: pip install 'aisync-cli[mcp]' (mcp>=2.3)") from ex
     server = MCPServer("aisync", instructions=INSTRUCTIONS)
     for fn in TOOLS:
         server.tool(name=fn.__name__.rstrip("_"), description=fn.__doc__)(fn)

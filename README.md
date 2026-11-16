@@ -1,3 +1,8 @@
+
+
+
+
+
 <div align="center">
 
 <img src="docs/assets/banner.svg" width="100%" alt="aisync: Multi-Agent Context Management, Coordination & Observability"/>
@@ -13,6 +18,10 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![deps](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-green)
+[![PyPI](https://img.shields.io/pypi/v/aisync-cli?label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/aisync-cli/)
+[![npm](https://img.shields.io/npm/v/%40mingyang2026%2Faisync-cli?label=npm&logo=npm&logoColor=white)](https://www.npmjs.com/package/@mingyang2026/aisync-cli)
+[![Homebrew](https://img.shields.io/badge/Homebrew-maxont%2Ftap-FBB040?logo=homebrew&logoColor=white)](https://github.com/MaxonT/homebrew-tap)
+[![GHCR](https://img.shields.io/badge/GHCR-container-2496ED?logo=docker&logoColor=white)](https://github.com/MaxonT/aisync/pkgs/container/aisync)
 [![GitHub stars](https://img.shields.io/github/stars/MaxonT/aisync.svg?style=social)](https://github.com/MaxonT/aisync/stargazers)
 
 **English** · [中文](README.zh-CN.md) · [Website](https://maxont.github.io/aisync/) · [Demo status board](https://maxont.github.io/aisync/board/)
@@ -32,6 +41,21 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 ## Who it's for
 
 Developers running **two or more AI coding agents** across one or multiple repositories—especially when agents work concurrently, hand tasks off, or need a shared record of decisions and blockers. aisync is not another coding agent or a task orchestrator: it is the **shared context and coordination layer** those agents can use.
+
+## See it
+
+<div align="center">
+
+### The Agent Swarm Floor
+
+<img width="705" height="875" alt="cover" src="https://github.com/user-attachments/assets/cee23378-2379-49a5-960b-ac63764bb95f" />
+
+
+
+https://github.com/user-attachments/assets/f741ef6f-0c10-46f4-8c94-769c6e02d30e
+
+
+
 
 ## Integrations: native hooks are not the compatibility boundary
 
@@ -62,19 +86,15 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
-## See it
+**📦 Or from a package manager.** The command is still `aisync`:
 
-<div align="center">
+```bash
+pipx install aisync-cli           # 🐍 PyPI (or: uv tool install aisync-cli)
+npx @mingyang2026/aisync-cli --version   # 📦 npm (runs the same PyPI release)
+brew install maxont/tap/aisync    # 🍺 Homebrew tap
+docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
+```
 
-### The Agent Swarm Floor
-
-<video src="https://github.com/user-attachments/assets/33d74b85-13b8-483b-905e-18a6bf6c137d" width="360" controls></video>
-
-<sub>42 seconds · an illustration with synthetic data · sound on · <a href="https://maxont.github.io/aisync/assets/swarm-floor.mp4">player not loading? open the video directly</a></sub>
-
-</div>
-
-<div align="center">
 
 ### Two agents, one file
 
@@ -143,7 +163,7 @@ aisync release -a codex -p api
 | `guard` | Claude Code hook: one session per repo; denies an edit when another session holds the repo (opt-in, see below) |
 | `lease` | who holds which repo (`lease status`), or free one by hand (`lease release --key`) |
 | `wt` | a session's own git worktree: `wt start` opens it; `wt land` lands it on main and needs `--yes` (without it: a dry run) |
-| `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync[mcp]'`) |
+| `mcp` | serve the hub to any MCP agent over stdio (`pip install 'aisync-cli[mcp]'`) |
 | `claim` / `release` / `claims` | who is working on which files right now; overlap = exit 3 |
 | `news` | what other tools did since this session last looked |
 | `hook <tool>` | entry point for Claude Code, Codex and Cursor hooks (reads hook JSON, never fails) |
@@ -156,6 +176,11 @@ aisync release -a codex -p api
 | `sync` / `watch` | run one sync cycle / the debounced, event-driven loop |
 | `resolve` / `resume` | rule on a rule conflict / clear failure counters after a pause |
 | `demo` | the throwaway hub shown above |
+| `version` / `-v` / `-V` / `--version` | print the version |
+| `help [command]` | this screen, or one command's options (`aisync help log`) |
+| `update` | check GitHub for a newer release and print the command that upgrades (uv, pipx, install.sh, brew or pip); it never installs by itself |
+| `doctor` | check python, git, the hub folder and the journal chain (exit 1 on any failure) |
+| `completion` | print a shell completion script for bash, zsh or fish: `eval "$(aisync completion zsh)"` |
 
 ## New in 0.2.0: rules as interfaces, loaded in layers
 
@@ -174,7 +199,7 @@ A rules file grows until every session pays for it and nobody reads it. 0.2.0 tr
 - **A clerk, not a janitor.** `aisync tidy` proposes (duplicates, uncited rules, budget overruns) and never edits;
   a replaced rule moves to `rules-archive.md` with its ID, nothing is deleted.
 - **Any agent.** Three doors: the AGENTS.md page, the CLI, and `aisync mcp` (tools: rules, rule_add, log, claim,
-  release, news, status, tidy). The core stays standard-library only; the MCP SDK is the optional `aisync[mcp]` extra.
+  release, news, status, tidy). The core stays standard-library only; the MCP SDK is the optional `aisync-cli[mcp]` extra.
 
 ## How it works
 
@@ -259,3 +284,18 @@ comes from [`.github/refine/how-it-works.stages.json`](.github/refine/how-it-wor
 credits above from [`.github/refine/lineage.json`](.github/refine/lineage.json). All demo data is synthetic.
 
 MIT licensed.
+
+
+## More Videos if you like!
+
+https://github.com/user-attachments/assets/5ea7928b-4985-4700-8551-90477a84df40
+
+https://github.com/user-attachments/assets/91385ac4-714c-4a16-908b-1859ef1c78e2
+
+
+https://github.com/user-attachments/assets/bf661d5c-b7b1-4876-8469-2e11dd95b232
+
+
+
+https://github.com/user-attachments/assets/d32f3abd-2986-4fbf-83a2-be287f0185a7
+

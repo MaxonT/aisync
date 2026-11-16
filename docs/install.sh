@@ -13,9 +13,9 @@
 # It never edits shell config, never uses sudo, and never reads any of your files.
 set -euo pipefail
 
-VERSION="0.2.5"
+VERSION="0.2.8"
 REPO="https://github.com/MaxonT/aisync"
-SPEC="${REPO}/releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl"
+SPEC="${REPO}/releases/download/v${VERSION}/aisync_cli-${VERSION}-py3-none-any.whl"
 VENV="${HOME}/.local/share/aisync/venv"
 BIN_DIR="${HOME}/.local/bin"
 DRY=0
@@ -24,7 +24,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1 ;;
     --version) VERSION="${2:?--version needs a release number, e.g. 0.1.0}"; VERSION="${VERSION#v}"
-               SPEC="${REPO}/releases/download/v${VERSION}/aisync-${VERSION}-py3-none-any.whl"; shift ;;
+               SPEC="${REPO}/releases/download/v${VERSION}/aisync_cli-${VERSION}-py3-none-any.whl"; shift ;;
     --ref) SPEC="git+${REPO}@${2:?--ref needs a branch, tag or commit}"; shift ;;
     --from) SPEC="${2:?--from needs a wheel file or URL}"; shift ;;
     -h|--help) sed -n '2,13p' "$0" 2>/dev/null | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -89,16 +89,23 @@ if [ "$DRY" = 1 ]; then
   exit 0
 fi
 
-if command -v aisync >/dev/null 2>&1; then
-  say "installed: $(aisync --version 2>&1)"
-  say "next: aisync demo   (a throwaway hub with a synthetic two-week journal)"
+# Report the copy this run installed, by its own path. A plain `command -v aisync` could find an
+# older aisync that is already on PATH and print the wrong version.
+installed_bin=""
+uv_bin=""
+if command -v uv >/dev/null 2>&1; then uv_bin="$(uv tool dir --bin 2>/dev/null || true)"; fi
+for c in "${uv_bin:+$uv_bin/aisync}" "$BIN_DIR/aisync" "$(python3 -m site --user-base 2>/dev/null)/bin/aisync" "$VENV/bin/aisync"; do
+  if [ -n "$c" ] && [ -x "$c" ]; then installed_bin="$c"; break; fi
+done
+if [ -n "$installed_bin" ]; then
+  say "installed: $("$installed_bin" --version 2>&1) at $installed_bin"
+  first="$(command -v aisync 2>/dev/null || true)"
+  if [ -n "$first" ] && [ "$first" != "$installed_bin" ]; then
+    say "note: another aisync comes first on PATH: $first ($("$first" --version 2>&1 || true))."
+    say "run the new one as $installed_bin, or put $(dirname "$installed_bin") first on PATH yourself."
+  fi
+  say "next: $installed_bin demo   (a throwaway hub with a synthetic two-week journal)"
 else
-  found=""
-  for c in "$BIN_DIR/aisync" "$(python3 -m site --user-base 2>/dev/null)/bin/aisync"; do
-    if [ -x "$c" ]; then found="$c"; break; fi
-  done
-  say "installed, but 'aisync' is not on PATH yet."
-  say "fix it yourself (this script never edits shell config): add $(dirname "${found:-$BIN_DIR/aisync}") to PATH,"
-  say "or run uv tool update-shell / pipx ensurepath."
-  if [ -n "$found" ]; then say "until then run it by its full path: $found demo"; fi
+  say "error: installed, but no aisync binary was found in the usual places. Run uv tool dir --bin, or pipx list." >&2
+  exit 1
 fi

@@ -186,9 +186,9 @@ class InstallHooksCliTests(Base):
 class ReleaseTests(unittest.TestCase):
     def test_version_and_console_script(self):
         meta = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
-        self.assertEqual(meta["version"], "0.2.5")
+        self.assertEqual(meta["version"], "0.2.8")
         self.assertEqual(ai_sync.__version__, meta["version"])
-        self.assertEqual(meta["name"], "aisync")
+        self.assertEqual(meta["name"], "aisync-cli")
         self.assertEqual(meta["scripts"], {"aisync": "ai_sync.cli:main"})
         self.assertEqual(meta["dependencies"], [])
         self.assertEqual(meta["optional-dependencies"], {"mcp": ["mcp>=2.3,<3"]})
@@ -205,14 +205,14 @@ class ReleaseTests(unittest.TestCase):
         import sys
         for path in (ROOT / "ai_sync").glob("*.py"):
             for mod in re.findall(r"^\s*(?:from|import) ([a-zA-Z_]\w*)", path.read_text(), re.M):
-                optional = path.name == "mcp_server.py" and mod == "mcp"     # the `aisync[mcp]` extra, imported lazily
+                optional = path.name == "mcp_server.py" and mod == "mcp"     # the `aisync-cli[mcp]` extra, imported lazily
                 self.assertTrue(mod in sys.stdlib_module_names or mod == "__future__" or optional, f"{path.name}: {mod}")
 
     def test_mcp_without_the_sdk_says_how_to_install_it(self):
         with mock.patch.dict("sys.modules", {"mcp": None, "mcp.server": None, "mcp.server.mcpserver": None}):
             code, out = run_cli("mcp")
         self.assertEqual(code, 2)
-        self.assertIn("pip install 'aisync[mcp]'", out)
+        self.assertIn("pip install 'aisync-cli[mcp]'", out)
 
 
 class RulecheckCliTests(Base):
