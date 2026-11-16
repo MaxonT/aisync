@@ -166,6 +166,8 @@ def cmd_rule(a) -> int:
             lines = layers.topic_rules(truth, a.topic)
             for line in lines:
                 print(line)
+            if not lines:
+                print(f"no rules under topic {a.topic!r} (topics: {' | '.join(collab.topics(truth)) or 'none; the hub has no topic headings yet'})", file=sys.stderr)
             return 0 if lines else 1
         for line in collab.rule_list(cfg, archived=a.archived):
             print(line)
