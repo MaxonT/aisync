@@ -21,7 +21,7 @@ class NpmWrapperTest(unittest.TestCase):
         pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
         pkg = json.loads((ROOT / "npm/package.json").read_text())
         self.assertEqual(pkg["version"], pyproject["version"])
-        self.assertEqual(pkg["name"], "aisync-cli")
+        self.assertEqual(pkg["name"], "@mingyang2026/aisync-cli")
 
 
 if __name__ == "__main__":
