@@ -60,3 +60,17 @@ class NineLanguagesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HeadingParityTest(unittest.TestCase):
+    """Every translation has the same H2 sections in the same order as the English source."""
+
+    def test_h2_count_and_order_match_the_english_source(self):
+        import re as _re
+        src = [l for l in (ROOT / "README.md").read_text().splitlines() if l.startswith("## ")]
+        self.assertTrue(src)
+        for name in LANGS:
+            if name == "README.md":
+                continue
+            got = [l for l in (ROOT / name).read_text().splitlines() if l.startswith("## ")]
+            self.assertEqual(len(got), len(src), f"{name}: {len(got)} H2 sections, English has {len(src)}")
