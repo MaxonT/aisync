@@ -89,7 +89,8 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 **📦 Or from a package manager.** The command is still `aisync`:
 
 ```bash
-pipx install aisync-cli           # PyPI (or: uv tool install aisync-cli)
+pipx install aisync-cli           # 🐍 PyPI (or: uv tool install aisync-cli)
+npx @mingyang2026/aisync-cli --version   # 📦 npm (runs the same PyPI release)
 brew install maxont/tap/aisync    # 🍺 Homebrew tap
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
 ```
