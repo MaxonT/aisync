@@ -24,7 +24,7 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 [![GHCR](https://img.shields.io/badge/GHCR-container-2496ED?logo=docker&logoColor=white)](https://github.com/MaxonT/aisync/pkgs/container/aisync)
 [![GitHub stars](https://img.shields.io/github/stars/MaxonT/aisync.svg?style=social)](https://github.com/MaxonT/aisync/stargazers)
 
-**English** · [中文](README.zh-CN.md) · [Website](https://maxont.github.io/aisync/) · [Demo status board](https://maxont.github.io/aisync/board/)
+**English** · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [Website](https://maxont.github.io/aisync/) · [Demo status board](https://maxont.github.io/aisync/board/)
 
 </div>
 
@@ -90,8 +90,8 @@ Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only th
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI (or: uv tool install aisync-cli)
-npx @mingyang2026/aisync-cli --version   # 📦 npm (runs the same PyPI release)
-brew install maxont/tap/aisync    # 🍺 Homebrew tap
+npx @mingyang2026/aisync-cli --version   # 📦 npm (0.2.7 now; 0.2.8 pending)
+brew install maxont/tap/aisync    # 🍺 Homebrew tap (Python 3.14 first)
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
 ```
 
@@ -114,7 +114,7 @@ Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · t
 
 aisync also does the rules part: one rules block copied into every tool's own rule file, synced 3-way, conflicts never overwritten.
 
-**Dogfooded:** 6,700+ journal events from 7 AI tools over 4 weeks.
+**Dogfooded:** 6,700+ journal events on the author's own hub.
 
 ## Why not just AGENTS.md?
 
@@ -191,11 +191,9 @@ A rules file grows until every session pays for it and nobody reads it. 0.2.0 tr
   `rule rewrite` reshapes old rules by ID and refuses a rewrite that drops a path, number or command.
 - **Layers.** Mark a tool copy `layer = "core"`: it carries `core_topics` in full and every other topic as one line.
   When a prompt or tool call touches a topic's keywords (`[shelf]`), the hook injects that topic once per session.
-  On the author's own hub this cut the always-loaded rules from 20,673 to 7,876 tokens; replaying 7 days of
-  transcripts, 98.9% of the 189 times a folded rule was cited, it had been injected before the citation.
+  On the author's own hub this cut the always-loaded rules from 20,673 to 7,876 tokens.
 - **A stable prefix.** `progress_file` moves the live progress table out of the shared page, so the page stays
-  byte-identical and prompt caches keep hitting: the next session after a journal event read 61,151 cached tokens
-  instead of 13,060.
+  byte-identical and prompt caches keep hitting.
 - **A clerk, not a janitor.** `aisync tidy` proposes (duplicates, uncited rules, budget overruns) and never edits;
   a replaced rule moves to `rules-archive.md` with its ID, nothing is deleted.
 - **Any agent.** Three doors: the AGENTS.md page, the CLI, and `aisync mcp` (tools: rules, rule_add, log, claim,

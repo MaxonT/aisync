@@ -61,6 +61,9 @@ venv_install() {
   fi
   run "$VENV/bin/python" -m pip install --quiet --upgrade "$SPEC"
   run mkdir -p "$BIN_DIR"
+  if [ -e "$BIN_DIR/aisync" ] || [ -L "$BIN_DIR/aisync" ]; then
+    say "replacing $BIN_DIR/aisync (was: $(readlink "$BIN_DIR/aisync" 2>/dev/null || echo a regular file))"
+  fi
   run ln -sf "$VENV/bin/aisync" "$BIN_DIR/aisync"
 }
 

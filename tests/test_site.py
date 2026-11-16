@@ -125,7 +125,7 @@ class InstallScriptTests(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("releases/download/v9.8.7/aisync_cli-9.8.7-py3-none-any.whl", r.stdout)
         release = (ROOT / ".github/workflows/release.yml").read_text()
-        self.assertIn('install.sh | bash -s -- --version "${TAG#v}"', release)
+        self.assertIn('raw.githubusercontent.com/MaxonT/aisync/${TAG}/docs/install.sh', release)
 
     def test_help_prints_only_the_header(self):
         r = subprocess.run(["bash", str(self.SCRIPT), "--help"], capture_output=True, text=True, timeout=30)

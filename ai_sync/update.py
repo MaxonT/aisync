@@ -44,7 +44,7 @@ def install_method(module_file: str | Path, executable: str = "") -> str:
         return "pipx"
     if "/.local/share/aisync/venv/" in p:
         return "installer"
-    if "/Cellar/" in p or "/homebrew/" in p.lower() or "/Homebrew/" in p or "/Cellar/" in exe:
+    if "/Cellar/" in p or "/Cellar/" in exe:          # Homebrew installs under .../Cellar/<formula>/<version>/
         return "brew"
     return "pip"
 

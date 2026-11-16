@@ -18,13 +18,18 @@ def read(path):
     return (ROOT / path).read_text()
 
 
+def _first(pattern, text, flags=0):
+    m = re.search(pattern, text, flags)
+    return m.group(1) if m else "<not found>"
+
+
 def checks(want_tag_free: bool):
     out = []
     version = tomllib.loads(read("pyproject.toml"))["project"]["version"]
     name = tomllib.loads(read("pyproject.toml"))["project"]["name"]
-    init = re.search(r'__version__ = "([^"]+)"', read("ai_sync/__init__.py")).group(1)
+    init = _first(r'__version__ = "([^"]+)"', read("ai_sync/__init__.py"))
     npm = json.loads(read("npm/package.json"))
-    install_sh = re.search(r'^VERSION="([^"]+)"', read("docs/install.sh"), re.M).group(1)
+    install_sh = _first(r'^VERSION="([^"]+)"', read("docs/install.sh"), re.M)
     out.append(("version: pyproject == __init__", version == init, f"{version} vs {init}"))
     out.append(("version: npm launcher == pyproject", npm["version"] == version, f"{npm['version']} vs {version}"))
     out.append(("version: docs/install.sh == pyproject", install_sh == version, f"{install_sh} vs {version}"))
@@ -32,7 +37,7 @@ def checks(want_tag_free: bool):
     ci = read(".github/workflows/ci.yml")
     out.append(("ci glob names the built wheel", f"dist/{name.replace('-', '_')}-*.whl" in ci, wheel))
     out.append(("npm package name appears in README npx line",
-                f"npx {npm['name']} " in read("README.md"), npm["name"]))
+                re.search(rf"npx {re.escape(npm['name'])}(?=[\s`]|$)", read("README.md"), re.M) is not None, npm["name"]))
     if want_tag_free:
         tags = subprocess.run(["git", "-C", str(ROOT), "tag", "-l", f"v{version}"],
                               capture_output=True, text=True).stdout.strip()
