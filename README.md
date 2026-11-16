@@ -18,6 +18,10 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![deps](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-green)
+[![PyPI](https://img.shields.io/pypi/v/aisync-cli?label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/aisync-cli/)
+[![npm](https://img.shields.io/npm/v/%40mingyang2026%2Faisync-cli?label=npm&logo=npm&logoColor=white)](https://www.npmjs.com/package/@mingyang2026/aisync-cli)
+[![Homebrew](https://img.shields.io/badge/Homebrew-maxont%2Ftap-FBB040?logo=homebrew&logoColor=white)](https://github.com/MaxonT/homebrew-tap)
+[![GHCR](https://img.shields.io/badge/GHCR-container-2496ED?logo=docker&logoColor=white)](https://github.com/MaxonT/aisync/pkgs/container/aisync)
 [![GitHub stars](https://img.shields.io/github/stars/MaxonT/aisync.svg?style=social)](https://github.com/MaxonT/aisync/stargazers)
 
 **English** · [中文](README.zh-CN.md) · [Website](https://maxont.github.io/aisync/) · [Demo status board](https://maxont.github.io/aisync/board/)
@@ -82,11 +86,12 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 Needs Python 3.11+ and git, on macOS or Linux. Nothing else: aisync uses only the standard library.
 
-**Or from a package manager.** The command is still `aisync`:
+**📦 Or from a package manager.** The command is still `aisync`:
 
 ```bash
 pipx install aisync-cli           # PyPI (or: uv tool install aisync-cli)
-brew install maxont/tap/aisync    # Homebrew tap
+brew install maxont/tap/aisync    # 🍺 Homebrew tap
+docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR image
 ```
 
 

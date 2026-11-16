@@ -11,6 +11,10 @@
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![deps](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-green)
+[![PyPI](https://img.shields.io/pypi/v/aisync-cli?label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/aisync-cli/)
+[![npm](https://img.shields.io/npm/v/%40mingyang2026%2Faisync-cli?label=npm&logo=npm&logoColor=white)](https://www.npmjs.com/package/@mingyang2026/aisync-cli)
+[![Homebrew](https://img.shields.io/badge/Homebrew-maxont%2Ftap-FBB040?logo=homebrew&logoColor=white)](https://github.com/MaxonT/homebrew-tap)
+[![GHCR](https://img.shields.io/badge/GHCR-container-2496ED?logo=docker&logoColor=white)](https://github.com/MaxonT/aisync/pkgs/container/aisync)
 [![GitHub stars](https://img.shields.io/github/stars/MaxonT/aisync.svg?style=social)](https://github.com/MaxonT/aisync/stargazers)
 
 [English](README.md) · **中文** · [网站](https://maxont.github.io/aisync/) · [演示看板](https://maxont.github.io/aisync/board/)
@@ -44,11 +48,12 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 需要 Python 3.11+ 和 git，macOS 或 Linux。别的都不需要：aisync 只用 Python 标准库。
 
-**也可以用包管理器装。** 命令仍然是 `aisync`：
+**📦 也可以用包管理器装。** 命令仍然是 `aisync`：
 
 ```bash
 pipx install aisync-cli           # PyPI（或 uv tool install aisync-cli）
-brew install maxont/tap/aisync    # Homebrew tap
+brew install maxont/tap/aisync    # 🍺 Homebrew tap
+docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
 ```
 
 第一次成功运行命令后，CLI 会问一次：`Star MaxonT/aisync on GitHub? [y/N]`。默认是不点，以后不会再问；在 CI、管道和脚本里不会出现。回答 y 会用你自己的 `gh` 登录点 star（没装 `gh` 就只打印链接）。设置 `NO_STAR_PROMPT=1` 可以跳过这个问题。
