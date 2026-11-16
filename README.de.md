@@ -39,6 +39,12 @@ aisync ist **im Kern agentenunabhängig**. Es bietet native Hooks für Claude Co
 >
 > Dateiclaims sind **kooperativ**, keine vom Betriebssystem erzwungenen Sperren: Agenten müssen das Claim-Protokoll verwenden. Die Hash-Kettenprüfung erkennt Änderungen an aufgezeichneten Ereignissen; sie beweist nicht, dass jede beanspruchte Aktion tatsächlich stattgefunden hat.
 
+**Ausprobieren** (benötigt [uv](https://docs.astral.sh/uv/); führt `aisync demo` auf einem Wegwerf-Hub im temporären Ordner mit synthetischen Daten aus, Ihr eigener Hub bleibt unberührt):
+
+```sh
+uvx --from aisync-cli aisync demo
+```
+
 ## Für wen es gedacht ist
 
 Entwickler, die **zwei oder mehr KI-Coding-Agenten** über ein oder mehrere Repositories hinweg einsetzen, besonders wenn Agenten parallel arbeiten, Aufgaben übergeben oder ein gemeinsames Protokoll von Entscheidungen und Blockern brauchen. aisync ist kein weiterer Coding-Agent und kein Task-Orchestrator: Es ist die **gemeinsame Kontext- und Koordinationsschicht**, die diese Agenten nutzen können.

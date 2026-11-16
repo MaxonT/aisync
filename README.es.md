@@ -40,6 +40,12 @@ aisync es **agnóstico de agente** en su núcleo. Ofrece hooks nativos para Clau
 >
 > Las reclamaciones de archivos son **cooperativas**, no bloqueos impuestos por el sistema operativo: los agentes deben usar el protocolo de reclamaciones. La verificación de la cadena de hashes detecta cambios en los eventos registrados; no demuestra que cada acción reclamada haya ocurrido.
 
+**Pruébalo** (requiere [uv](https://docs.astral.sh/uv/); ejecuta `aisync demo` en un hub desechable de tu carpeta temporal con datos sintéticos, y tu propio hub no se toca):
+
+```sh
+uvx --from aisync-cli aisync demo
+```
+
 ## Para quién es
 
 Desarrolladores que ejecutan **dos o más agentes de programación de IA** en uno o varios repositorios, sobre todo cuando los agentes trabajan a la vez, se pasan tareas o necesitan un registro compartido de decisiones y bloqueos. aisync no es otro agente de programación ni un orquestador de tareas: es la **capa compartida de contexto y coordinación** que esos agentes pueden usar.

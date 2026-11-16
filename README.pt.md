@@ -40,6 +40,12 @@ O aisync é **agnóstico de agente em sua essência**. Ele oferece hooks nativos
 >
 > Os file claims são **cooperativos**, não bloqueios impostos pelo sistema operacional: os agentes precisam usar o protocolo de claims. A verificação por cadeia de hash detecta alterações nos eventos registrados; ela não prova que toda ação reivindicada de fato ocorreu.
 
+**Experimente** (requer [uv](https://docs.astral.sh/uv/); executa `aisync demo` em um hub descartável na sua pasta temporária, com dados sintéticos, e o seu próprio hub não é tocado):
+
+```sh
+uvx --from aisync-cli aisync demo
+```
+
 ## Para quem é
 
 Desenvolvedores que usam **dois ou mais agentes de codificação com IA** em um ou vários repositórios, especialmente quando os agentes trabalham simultaneamente, passam tarefas adiante ou precisam de um registro compartilhado de decisões e bloqueios. O aisync não é mais um agente de codificação nem um orquestrador de tarefas: ele é a **camada compartilhada de contexto e coordenação** que esses agentes podem usar.

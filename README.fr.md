@@ -40,6 +40,12 @@ aisync est **agnostique vis-à-vis des agents** dans son cœur. Il fournit des h
 >
 > Les revendications de fichiers sont **coopératives**, pas des verrous imposés par le système d'exploitation : les agents doivent utiliser le protocole de revendication. La vérification de la chaîne de hachage détecte les modifications des événements enregistrés ; elle ne prouve pas que chaque action revendiquée a bien eu lieu.
 
+**Essayez** (nécessite [uv](https://docs.astral.sh/uv/) ; lance `aisync demo` sur un hub jetable dans votre dossier temporaire, avec des données synthétiques, sans toucher à votre propre hub) :
+
+```sh
+uvx --from aisync-cli aisync demo
+```
+
 ## Pour qui
 
 Développeurs qui utilisent **deux agents de codage IA ou plus** sur un ou plusieurs dépôts, en particulier lorsque les agents travaillent en parallèle, se passent des tâches, ou ont besoin d'un registre partagé des décisions et des blocages. aisync n'est pas un autre agent de codage ni un orchestrateur de tâches : c'est la **couche partagée de contexte et de coordination** que ces agents peuvent utiliser.
