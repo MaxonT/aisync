@@ -723,6 +723,39 @@ def cmd_doctor(a) -> int:
     return 0 if all(ok for ok, _ in rows) else 1
 
 
+def _command_names() -> list[str]:
+    for action in build_parser()._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            return list(action.choices)
+    return []
+
+
+def cmd_completion(a) -> int:
+    """Print a shell completion script: `eval "$(aisync completion zsh)"` (or bash, fish)."""
+    names = " ".join(_command_names())
+    if a.shell == "bash":
+        print(f"""_aisync_complete() {{
+  local cur="${{COMP_WORDS[COMP_CWORD]}}"
+  if [ "$COMP_CWORD" -eq 1 ]; then
+    COMPREPLY=( $(compgen -W "{names} -v -V --version -h --help" -- "$cur") )
+  fi
+}}
+complete -F _aisync_complete aisync""")
+    elif a.shell == "zsh":
+        print(f"""#compdef aisync
+_aisync() {{
+  local -a commands
+  commands=({names})
+  if (( CURRENT == 2 )); then
+    _describe 'command' commands
+  fi
+}}
+compdef _aisync aisync""")
+    else:
+        print("\n".join(f"complete -c aisync -n '__fish_use_subcommand' -a {n}" for n in _command_names()))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = _Root(prog="aisync", description="Multi-Agent Context Management, Coordination & Observability.")
     p.add_argument("-v", "-V", "--version", action="version", version=f"aisync {__version__}")
@@ -915,6 +948,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=cmd_help)
     s = sub.add_parser("update", help="check GitHub for a newer release and print the command that upgrades (never installs)")
     s.set_defaults(fn=cmd_update)
+    s = sub.add_parser("completion", help="print a shell completion script: eval \"$(aisync completion zsh)\"")
+    s.add_argument("shell", choices=("bash", "zsh", "fish"))
+    s.set_defaults(fn=cmd_completion)
     s = sub.add_parser("doctor", help="check python, git, the hub folder and the journal chain (exit 1 on any failure)")
     s.set_defaults(fn=cmd_doctor)
     return p

@@ -54,10 +54,22 @@ test("arguments and exit code pass through a runner", () => {
   assert.match(r.stdout, new RegExp(`ARGS:--from ${SPEC.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} aisync log --summary hi there`));
 });
 
+// Does PyPI already have this exact release? The end-to-end check needs it; before the release it is skipped
+// (the release workflow runs this suite before it publishes, so it must not fail on the version it is about to ship).
+function onPyPI(version) {
+  const r = spawnSync("curl", ["-s", "-o", "/dev/null", "-w", "%{http_code}",
+    `https://pypi.org/pypi/aisync-cli/${version}/json`], { encoding: "utf8" });
+  return r.status === 0 && r.stdout.trim() === "200";
+}
+
 test("end to end: the real uvx fetches the pinned PyPI release", { timeout: 180000 }, (t) => {
   const probe = spawnSync("uvx", ["--version"], { encoding: "utf8" });
   if (probe.error || probe.status !== 0) {
     t.skip("uvx not installed");
+    return;
+  }
+  if (!onPyPI(pkg.version)) {
+    t.skip(`aisync-cli ${pkg.version} is not on PyPI yet`);
     return;
   }
   const r = spawnSync(process.execPath, [BIN, "--version"], { encoding: "utf8", timeout: 170000 });

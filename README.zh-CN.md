@@ -135,6 +135,11 @@ aisync release -a codex -p api
 | `tidy` | 规则文员：疑似重复、最近没人引用的规则、核心层超预算；只提建议，由你勾选 |
 | `rulecheck` | 证明一次规则整理没丢掉硬事实（路径、数字、命令、编号） |
 | `instinct` | 可选的习惯清单，从过去的错误里长出来，每次会话开头注入 |
+| `gate` | 推送时的测试闸门：`gate check` 对某个提交运行 `./check.sh --fast`；git pre-push hook 调用 `gate pre-push`（需主动开启，见下文） |
+| `web-inbox` | 立即从 `web-inbox` 分支导入网页版 Claude 的事件（`--no-fetch` 使用上次拉取的副本） |
+| `guard` | Claude Code hook：每个仓库只允许一个会话；另一个会话占用该仓库时拒绝编辑（需主动开启，见下文） |
+| `lease` | 查看哪个会话占用哪个仓库（`lease status`），或手动释放（`lease release --key`） |
+| `wt` | 会话自己的 git worktree：`wt start` 打开；`wt land` 把它合并到 main，需要 `--yes`（不带则只是演练） |
 | `mcp` | 通过 stdio 把 hub 提供给任何 MCP agent（`pip install 'aisync-cli[mcp]'`） |
 | `claim` / `release` / `claims` | 此刻谁在改哪些文件；撞车 = 退出码 3 |
 | `news` | 这个会话上次看过之后，别的工具做了什么 |
@@ -152,6 +157,7 @@ aisync release -a codex -p api
 | `help [命令]` | 本页帮助，或某个命令的选项（`aisync help log`） |
 | `update` | 查 GitHub 上有没有新版本，并打印升级命令（uv、pipx、install.sh、brew 或 pip）；它自己不安装 |
 | `doctor` | 检查 python、git、hub 目录和日志哈希链（任一项失败则退出码为 1） |
+| `completion` | 打印 bash、zsh 或 fish 的补全脚本：`eval "$(aisync completion zsh)"` |
 
 ## 0.2.0 新增：规则写成接口，分层加载
 
