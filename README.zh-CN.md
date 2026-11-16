@@ -78,7 +78,7 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 
 ```bash
 pipx install aisync-cli           # 🐍 PyPI（或 uv tool install aisync-cli）
-npx @mingyang2026/aisync-cli --version   # npm 0.2.8 (0.2.9 pending)
+npx @mingyang2026/aisync-cli --version   # npm 0.2.9
 brew install maxont/tap/aisync    # 🍺 Homebrew tap（先装 Python 3.14）
 docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
 ```
