@@ -180,6 +180,7 @@ aisync release -a codex -p api
 | `help [command]` | this screen, or one command's options (`aisync help log`) |
 | `update` | check GitHub for a newer release and print the command that upgrades (uv, pipx, install.sh, brew or pip); it never installs by itself |
 | `doctor` | check python, git, the hub folder and the journal chain (exit 1 on any failure) |
+| `completion` | print a shell completion script for bash, zsh or fish: `eval "$(aisync completion zsh)"` |
 
 ## New in 0.2.0: rules as interfaces, loaded in layers
 
