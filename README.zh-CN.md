@@ -32,6 +32,12 @@
 
 <p align="center"><img src="docs/assets/cli.zh.png" alt="在终端里运行 aisync：渐变的 AISYNC 像素大字，下面按「开始、每次会话、查看、精简规则、保持运行」分组列出所有命令" width="720"></p>
 
+**试一试**（需要 [uv](https://docs.astral.sh/uv/)；在临时目录里的一次性演示 hub 上运行 `aisync demo`，数据是合成的，不会动你自己的 hub）：
+
+```sh
+uvx --from aisync-cli aisync demo
+```
+
 ## 适合谁用
 
 同时运行 **两个或更多 AI 编程 agent** 的开发者，尤其是 agent 会并发工作、交接任务，或需要一份共享的决定与受阻记录的时候。aisync 不是又一个编程 agent，也不是任务编排器：它是这些 agent 可以共用的**共享上下文与协调层**。

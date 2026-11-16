@@ -40,6 +40,12 @@ aisync is **agent-agnostic at its core**. It provides native hooks for Claude Co
 >
 > File claims are **cooperative**, not OS-enforced locks: agents must use the claim protocol. Hash-chain verification detects an edited event or a deleted one that a later event points at; it does not detect deleting the last line(s) of the journal (tested on 0.2.10; keep the hub in git to catch that), and it does not prove every claimed action occurred.
 
+**Try it** (needs [uv](https://docs.astral.sh/uv/); runs `aisync demo` on a throwaway hub in your temp folder with synthetic data, and your own hub is not touched):
+
+```sh
+uvx --from aisync-cli aisync demo
+```
+
 ## Who it's for
 
 Developers running **two or more AI coding agents** across one or multiple repositories—especially when agents work concurrently, hand tasks off, or need a shared record of decisions and blockers. aisync is not another coding agent or a task orchestrator: it is the **shared context and coordination layer** those agents can use.
