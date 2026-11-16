@@ -9,6 +9,8 @@
 
 # aisync: Multi-Agent Context Management, Coordination & Observability
 
+<!-- mcp-name: io.github.MaxonT/aisync -->
+
 **One local hub for developers working with multiple AI coding agents: share the right context, coordinate concurrent work, and verify what happened.**
 
 aisync is **agent-agnostic at its core**. It provides native hooks for Claude Code, Codex and Cursor, and exposes its hub to other agents through a CLI, MCP server, or shared instruction files. These three native integrations are **not** a limit on which agents can use aisync.
