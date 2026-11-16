@@ -281,6 +281,12 @@ The images are generated: the terminal GIF is a recorded real run of
 comes from [`.github/refine/how-it-works.stages.json`](.github/refine/how-it-works.stages.json), and the
 credits above from [`.github/refine/lineage.json`](.github/refine/lineage.json). All demo data is synthetic.
 
+**Contributing.** See [CONTRIBUTING.md](CONTRIBUTING.md). Open work you can pick up:
+[good first issues](https://github.com/MaxonT/aisync/issues?q=is%3Aopen+label%3A%22good+first+issue%22) and
+[help wanted](https://github.com/MaxonT/aisync/issues?q=is%3Aopen+label%3A%22help+wanted%22). Known gaps are filed
+as issues with a repro, for example [#23](https://github.com/MaxonT/aisync/issues/23) (`verify` does not detect a
+deleted last journal line).
+
 MIT licensed.
 
 
