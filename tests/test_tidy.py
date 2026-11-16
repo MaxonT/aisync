@@ -51,6 +51,35 @@ class TidyTests(Base):
         self.assertIn("- [ ] merge R-101 and R-102", text)
         self.assertIn("Checked 4 rules", text)
 
+    def test_rules_the_parser_cannot_read_are_reported_as_not_compared(self):
+        # a fresh hub has no topic headings, so `rule add` stores `- <stamp> (agent, project): When:... Reason:...`;
+        # the parser needs the (date · agent, project) tag at the end, so such rules never reached the duplicate check
+        # and tidy said "Likely duplicates (0)" for two near-identical rules (aisync-cli 0.2.9)
+        self._rules([
+            "- [R-201] 2026-11-16 05:04 CST (claude-code, demo): When: a test fails. Do: fix the cause before committing. "
+            "Not: skipping the test. Reason: demo",
+            "- [R-202] 2026-11-16 05:04 CST (codex, demo): When: a test fails. Do: fix the cause, then commit. "
+            "Not: skipping the test. Reason: demo",
+            "- [R-203] When: a release is cut. Do: tag the commit. (2026-11-16 · cursor, demo)",
+        ])
+        rep = tidy.report(self.cfg, globs=[])
+        self.assertEqual(rep["duplicates"], [])
+        self.assertEqual(rep["not_compared"], ["R-201", "R-202"])
+        text = tidy.render(rep, "2026-11-16")
+        self.assertIn("## Likely duplicates (0)\n- none\n", text)
+        self.assertIn("Not compared: 2 of 3 rules", text)
+        self.assertIn("(YYYY-MM-DD · agent, project)", text)
+
+    def test_nothing_is_reported_as_not_compared_when_every_rule_parses(self):
+        self._rules([
+            "- [R-211] When: sending a first email. Do: no link and no URL. (2026-11-01 · a)",
+            "- [R-212] When: sending a first email. Do: no link or URL. (2026-11-02 · a)",
+        ])
+        rep = tidy.report(self.cfg, globs=[])
+        self.assertEqual(rep["not_compared"], [])
+        self.assertEqual([(d["a"], d["b"]) for d in rep["duplicates"]], [("R-211", "R-212")])
+        self.assertNotIn("Not compared", tidy.render(rep, "2026-11-16"))
+
     def test_citations_read_usage_files_of_recent_days(self):
         self._rules(["- [R-101] When: a. Do: b. (2026-11-01 · a)"])
         f = self.t / "u" / "s.jsonl"

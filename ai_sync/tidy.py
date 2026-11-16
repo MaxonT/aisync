@@ -48,6 +48,12 @@ def duplicates(rules: list[str]) -> list[dict]:
     return out
 
 
+def not_compared(rules: list[str]) -> list[str]:
+    """IDs of the rules `duplicates` cannot read: it compares only rules in the When/Do/Not shape with the
+    `(YYYY-MM-DD · agent, project)` tag at the end, so any other rule is left out of the check without a word."""
+    return [rulespec.split(r)[0] for r in rules if not rulespec.parse(r)]
+
+
 def citations(cfg: core.Config, days: int, globs: list[str] | None = None) -> dict[str, int]:
     """Rule ID -> times cited in the journal and the usage files of the last `days` days."""
     since = time.time() - days * 86400
@@ -93,7 +99,8 @@ def report(cfg: core.Config, globs: list[str] | None = None, days: int = UNUSED_
     plans = {p["id"]: p for p in enf["planned"] if p["kind"] == "none"}
     no_enforcer = [rid for rid in ids if rid and (rid in plans or rid in enf["unplanned"])]
     lint = rulespec.lint(rules)
-    return {"rules": len(rules), "duplicates": duplicates(rules), "unused": unused, "unused_days": days,
+    return {"rules": len(rules), "duplicates": duplicates(rules), "not_compared": not_compared(rules),
+            "unused": unused, "unused_days": days,
             "core_chars": core_chars, "core_budget": budget, "over_budget": bool(cfg.core_topics) and core_chars > budget,
             "out_of_shape": [b["id"] for b in lint["bad"]], "no_enforcer": no_enforcer, "plans": plans,
             "enforcer_gone": enf["missing_paths"] + enf["relative_paths"]}
@@ -105,6 +112,11 @@ def render(rep: dict, day: str) -> str:
              "or `aisync rule add --replaces` (old text goes to rules-archive.md).", ""]
     lines += [f"## Likely duplicates ({len(rep['duplicates'])})"]
     lines += [f"- [ ] merge {d['a']} and {d['b']} (When {d['when']}, Do {d['do']})" for d in rep["duplicates"]] or ["- none"]
+    skipped = rep.get("not_compared", [])
+    if skipped:
+        lines.append(f"Not compared: {len(skipped)} of {rep['rules']} rules are not in the When/Do/Not shape with a "
+                     "(YYYY-MM-DD · agent, project) tag at the end, so this check skipped them "
+                     f"({', '.join(r or '(no id)' for r in skipped)}).")
     lines += ["", f"## Not cited in {rep['unused_days']} days ({len(rep['unused'])})",
               "Candidates to move to a folded topic or retire; a rule that guards a rare event can stay."]
     lines += [f"- [ ] {rid}" for rid in rep["unused"]] or ["- none"]
