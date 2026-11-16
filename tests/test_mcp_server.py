@@ -79,7 +79,7 @@ class MissingSdkTests(unittest.TestCase):
             return real(name, *a, **k)
         builtins.__import__ = fake
         try:
-            with self.assertRaisesRegex(RuntimeError, r"aisync\[mcp\]"):
+            with self.assertRaisesRegex(RuntimeError, r"aisync-cli\[mcp\]"):
                 mcp_server.build()
         finally:
             builtins.__import__ = real

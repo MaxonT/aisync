@@ -11,6 +11,10 @@
 ![python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![deps](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![license](https://img.shields.io/badge/license-MIT-green)
+[![PyPI](https://img.shields.io/pypi/v/aisync-cli?label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/aisync-cli/)
+[![npm](https://img.shields.io/npm/v/%40mingyang2026%2Faisync-cli?label=npm&logo=npm&logoColor=white)](https://www.npmjs.com/package/@mingyang2026/aisync-cli)
+[![Homebrew](https://img.shields.io/badge/Homebrew-maxont%2Ftap-FBB040?logo=homebrew&logoColor=white)](https://github.com/MaxonT/homebrew-tap)
+[![GHCR](https://img.shields.io/badge/GHCR-container-2496ED?logo=docker&logoColor=white)](https://github.com/MaxonT/aisync/pkgs/container/aisync)
 [![GitHub stars](https://img.shields.io/github/stars/MaxonT/aisync.svg?style=social)](https://github.com/MaxonT/aisync/stargazers)
 
 [English](README.md) · **中文** · [网站](https://maxont.github.io/aisync/) · [演示看板](https://maxont.github.io/aisync/board/)
@@ -43,6 +47,15 @@ curl -fsSL https://maxont.github.io/aisync/install.sh | bash
 ```
 
 需要 Python 3.11+ 和 git，macOS 或 Linux。别的都不需要：aisync 只用 Python 标准库。
+
+**📦 也可以用包管理器装。** 命令仍然是 `aisync`：
+
+```bash
+pipx install aisync-cli           # 🐍 PyPI（或 uv tool install aisync-cli）
+npx @mingyang2026/aisync-cli --version   # 📦 npm（运行同一个 PyPI 版本）
+brew install maxont/tap/aisync    # 🍺 Homebrew tap
+docker run --rm ghcr.io/maxont/aisync --version   # 🐳 GHCR 镜像
+```
 
 第一次成功运行命令后，CLI 会问一次：`Star MaxonT/aisync on GitHub? [y/N]`。默认是不点，以后不会再问；在 CI、管道和脚本里不会出现。回答 y 会用你自己的 `gh` 登录点 star（没装 `gh` 就只打印链接）。设置 `NO_STAR_PROMPT=1` 可以跳过这个问题。
 
@@ -122,7 +135,12 @@ aisync release -a codex -p api
 | `tidy` | 规则文员：疑似重复、最近没人引用的规则、核心层超预算；只提建议，由你勾选 |
 | `rulecheck` | 证明一次规则整理没丢掉硬事实（路径、数字、命令、编号） |
 | `instinct` | 可选的习惯清单，从过去的错误里长出来，每次会话开头注入 |
-| `mcp` | 通过 stdio 把 hub 提供给任何 MCP agent（`pip install 'aisync[mcp]'`） |
+| `gate` | 推送时的测试闸门：`gate check` 对某个提交运行 `./check.sh --fast`；git pre-push hook 调用 `gate pre-push`（需主动开启，见下文） |
+| `web-inbox` | 立即从 `web-inbox` 分支导入网页版 Claude 的事件（`--no-fetch` 使用上次拉取的副本） |
+| `guard` | Claude Code hook：每个仓库只允许一个会话；另一个会话占用该仓库时拒绝编辑（需主动开启，见下文） |
+| `lease` | 查看哪个会话占用哪个仓库（`lease status`），或手动释放（`lease release --key`） |
+| `wt` | 会话自己的 git worktree：`wt start` 打开；`wt land` 把它合并到 main，需要 `--yes`（不带则只是演练） |
+| `mcp` | 通过 stdio 把 hub 提供给任何 MCP agent（`pip install 'aisync-cli[mcp]'`） |
 | `claim` / `release` / `claims` | 此刻谁在改哪些文件；撞车 = 退出码 3 |
 | `news` | 这个会话上次看过之后，别的工具做了什么 |
 | `hook <tool>` | Claude Code、Codex、Cursor 的 hook 入口（读 hook JSON，永不报错退出） |
@@ -135,6 +153,11 @@ aisync release -a codex -p api
 | `sync` / `watch` | 跑一次同步 / 防抖的事件驱动循环 |
 | `resolve` / `resume` | 裁决规则冲突 / 暂停后清零失败计数 |
 | `demo` | 上面那个临时 hub |
+| `version` / `-v` / `-V` / `--version` | 打印版本号 |
+| `help [命令]` | 本页帮助，或某个命令的选项（`aisync help log`） |
+| `update` | 查 GitHub 上有没有新版本，并打印升级命令（uv、pipx、install.sh、brew 或 pip）；它自己不安装 |
+| `doctor` | 检查 python、git、hub 目录和日志哈希链（任一项失败则退出码为 1） |
+| `completion` | 打印 bash、zsh 或 fish 的补全脚本：`eval "$(aisync completion zsh)"` |
 
 ## 0.2.0 新增：规则写成接口，分层加载
 
@@ -152,7 +175,7 @@ aisync release -a codex -p api
 - **文员，不是清洁工。** `aisync tidy` 只提建议（重复、没人引用、超预算），从不改动；被取代的规则
   带着编号移进 `rules-archive.md`，什么都不删。
 - **任何 agent。** 三扇门：AGENTS.md 页面、CLI、`aisync mcp`（工具：rules、rule_add、log、claim、
-  release、news、status、tidy）。核心仍然只用标准库；MCP SDK 是可选的 `aisync[mcp]`。
+  release、news、status、tidy）。核心仍然只用标准库；MCP SDK 是可选的 `aisync-cli[mcp]`。
 
 ## 工作原理
 

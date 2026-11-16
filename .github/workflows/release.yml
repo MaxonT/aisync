@@ -70,6 +70,11 @@ jobs:
           docker push "$image:${TAG#v}"
           docker push "$image:latest"
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
   install-check:
     # the public one-liner in a clean container, against the Release that was just published
     needs: release
@@ -89,3 +94,19 @@ jobs:
           test "$(aisync --version)" = "aisync ${TAG#v}"
           aisync demo --dir /tmp/demo
           AISYNC_HOME=/tmp/demo aisync verify
+
+  publish-pypi:
+    # PyPI through Trusted Publishing: no token is stored. PyPI must have a publisher for
+    # MaxonT/aisync + release.yml (set once on pypi.org). Runs only after the GitHub Release exists.
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
