@@ -264,6 +264,11 @@ python3 -m unittest discover -s tests   # 含 wheel -> 全新 venv -> demo
 的真实运行，工作原理动画来自 [`.github/refine/how-it-works.stages.zh.json`](.github/refine/how-it-works.stages.zh.json)，
 上面的致谢来自 [`.github/refine/lineage.json`](.github/refine/lineage.json)。所有演示数据都是合成的。
 
+**参与贡献。** 见 [CONTRIBUTING.md](CONTRIBUTING.md)。可以直接接手的活：
+[good first issue](https://github.com/MaxonT/aisync/issues?q=is%3Aopen+label%3A%22good+first+issue%22) 和
+[help wanted](https://github.com/MaxonT/aisync/issues?q=is%3Aopen+label%3A%22help+wanted%22)。已知缺口都带复现步骤开成了 issue，
+例如 [#23](https://github.com/MaxonT/aisync/issues/23)（`verify` 查不出被删的最后一行）。
+
 MIT 许可证。
 
 ## 更多视频（如果你想看）
