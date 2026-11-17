@@ -5,7 +5,7 @@ import json
 import os
 from unittest import mock
 
-from ai_sync import core, tidy
+from ai_sync import collab, core, rulespec, tidy
 
 from test_ai_sync import Base
 
@@ -51,24 +51,73 @@ class TidyTests(Base):
         self.assertIn("- [ ] merge R-101 and R-102", text)
         self.assertIn("Checked 4 rules", text)
 
-    def test_rules_the_parser_cannot_read_are_reported_as_not_compared(self):
+    def test_legacy_rules_are_compared_with_each_other_and_topic_rules(self):
         # a fresh hub has no topic headings, so `rule add` stores `- <stamp> (agent, project): When:... Reason:...`;
-        # the parser needs the (date · agent, project) tag at the end, so such rules never reached the duplicate check
+        # the leading stamp hid the When/Do fields, so such rules never reached the duplicate check
         # and tidy said "Likely duplicates (0)" for two near-identical rules (aisync-cli 0.2.9)
         self._rules([
             "- [R-201] 2026-11-16 05:04 CST (claude-code, demo): When: a test fails. Do: fix the cause before committing. "
             "Not: skipping the test. Reason: demo",
             "- [R-202] 2026-11-16 05:04 CST (codex, demo): When: a test fails. Do: fix the cause, then commit. "
             "Not: skipping the test. Reason: demo",
-            "- [R-203] When: a release is cut. Do: tag the commit. (2026-11-16 · cursor, demo)",
+            "- [R-203] When: a test fails. Do: fix the cause before committing. (2026-11-16 · cursor, demo)",
+            "- [R-204] 2026-11-16 05:04 CST (codex, demo): free text rule. Reason: demo",
         ])
         rep = tidy.report(self.cfg, globs=[])
-        self.assertEqual(rep["duplicates"], [])
-        self.assertEqual(rep["not_compared"], ["R-201", "R-202"])
+        self.assertEqual([(d["a"], d["b"]) for d in rep["duplicates"]],
+                         [("R-201", "R-202"), ("R-201", "R-203"), ("R-202", "R-203")])
+        self.assertEqual(rep["not_compared"], ["R-204"])
+        # Comparing legacy rules does not make them conform to the current writing standard.
+        self.assertEqual(rep["out_of_shape"], ["R-201", "R-202", "R-204"])
         text = tidy.render(rep, "2026-11-16")
-        self.assertIn("## Likely duplicates (0)\n- none\n", text)
-        self.assertIn("Not compared: 2 of 3 rules", text)
-        self.assertIn("(YYYY-MM-DD · agent, project)", text)
+        self.assertIn("## Likely duplicates (3)\n", text)
+        self.assertIn("Not compared: 1 of 4 rules", text)
+
+    def test_rule_add_without_topics_reaches_duplicate_check(self):
+        # Base creates an ungrouped hub, as `aisync init` does.
+        for agent, action in [("claude-code", "fix the cause before committing"),
+                              ("codex", "fix the cause, then commit")]:
+            code, out = self.run_cli("rule", "add", "--agent", agent, "--project", "demo",
+                                     "--when", "a test fails", "--do", action,
+                                     "--not", "skipping the test", "--reason", "demo",
+                                     "--judgment-only", "nothing in code can check it")
+            self.assertEqual(code, 0, out)
+        added = [line for line in collab.rule_list(self.cfg) if "When: a test fails" in line]
+        self.assertEqual(len(added), 2)
+        before = (self.home / "preferences.md").read_text()
+        code, out = self.run_cli("tidy", "--json")
+        self.assertEqual(code, 0)
+        rep = json.loads(out)
+        self.assertEqual(len(rep["duplicates"]), 1)
+        self.assertEqual(set(rep["duplicates"][0][k] for k in ("a", "b")),
+                         {rulespec.split(line)[0] for line in added})
+        self.assertEqual((self.home / "preferences.md").read_text(), before)
+
+    def test_legacy_reason_does_not_affect_duplicate_comparison(self):
+        self._rules([
+            "- [R-221] 2026-11-16 05:04 +0530 (codex): When: a test fails. Do: fix it. "
+            "Reason: When: checking a regression. Do: keep the traceback.",
+            "- [R-222] When: a test fails. Do: fix it. (2026-11-16 · cursor, demo)",
+            "- [R-223] 2026-11-16 05:04 UTC (codex): When: a test fails. Do: fix it.",
+            "- [R-224] random prefix: When: a test fails. Do: fix it.",
+            "- [R-225] 2026-11-16 05:04 UTC (codex): Do: fix it. When: a test fails.",
+        ])
+        rep = tidy.report(self.cfg, globs=[])
+        self.assertEqual([(d["a"], d["b"]) for d in rep["duplicates"]],
+                         [("R-221", "R-222"), ("R-221", "R-223"), ("R-222", "R-223")])
+        self.assertEqual(rep["not_compared"], ["R-224", "R-225"])
+
+    def test_legacy_reason_label_in_action_is_not_truncated(self):
+        self._rules([
+            "- [R-231] 2026-11-16 05:04 UTC (codex): When: a test fails. "
+            "Do: include Reason: the root cause and full remediation steps. Reason: owner asked",
+            "- [R-232] When: a test fails. Do: include Reason: the root cause and full remediation steps. "
+            "(2026-11-16 · cursor, demo)",
+            "- [R-233] When: a test fails. Do: include. (2026-11-16 · cursor, demo)",
+        ])
+        rep = tidy.report(self.cfg, globs=[])
+        self.assertEqual([(d["a"], d["b"]) for d in rep["duplicates"]], [("R-231", "R-232")])
+        self.assertEqual(rep["not_compared"], [])
 
     def test_nothing_is_reported_as_not_compared_when_every_rule_parses(self):
         self._rules([

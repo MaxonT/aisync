@@ -25,6 +25,8 @@ UNUSED_DAYS = 30
 CORE_BUDGET_CHARS = 26000  # the core layer's rule text; about 7,000 tokens at the 2026-11-08 mix
 DEFAULT_GLOBS = ["~/.claude/projects/*/*.jsonl"]
 _RID = re.compile(r"\bR-\d{3,}\b")
+_LEGACY = re.compile(
+    r"^(?:- )?(?:\[(R-\d{3,})\]\s*)?\d{4}-\d{2}-\d{2} \d{2}:\d{2} \S+ \([^\n]*?\):\s*(.*)$")
 BULK = 40                # a file naming more distinct rule IDs than this is rule maintenance, not use
 
 
@@ -32,8 +34,29 @@ def _norm(s: str) -> str:
     return " ".join(re.sub(r"[`'\"()（）,，.;；:：]", " ", s.lower()).split())
 
 
+def _parse(rule: str) -> rulespec.Spec | None:
+    """Read current rules and the timestamp-prefixed bullets written in hubs without topics.
+
+    Legacy reasons are history, not part of When/Do/Not. Keep this compatibility read local to tidy:
+    it does not rewrite stored rules or relax the current interface-shape lint.
+    """
+    spec = rulespec.parse(rule)
+    if spec:
+        return spec
+    legacy = _LEGACY.match(rule.strip())
+    if not legacy:
+        return None
+    body = legacy.group(2)
+    # Match rulecheck.body's legacy convention: the final Reason: is the appended metadata,
+    # so a Reason: label earlier in the action is not mistaken for the end of that action.
+    reason = body.rfind(" Reason:")
+    if reason >= 0:
+        body = body[:reason]
+    return rulespec.parse(f"[{legacy.group(1)}] {body}" if legacy.group(1) else body)
+
+
 def duplicates(rules: list[str]) -> list[dict]:
-    specs = [(r, rulespec.parse(r)) for r in rules]
+    specs = [(r, _parse(r)) for r in rules]
     specs = [(r, s) for r, s in specs if s]
     out = []
     for i in range(len(specs)):
@@ -49,9 +72,8 @@ def duplicates(rules: list[str]) -> list[dict]:
 
 
 def not_compared(rules: list[str]) -> list[str]:
-    """IDs of the rules `duplicates` cannot read: it compares only rules in the When/Do/Not shape with the
-    `(YYYY-MM-DD · agent, project)` tag at the end, so any other rule is left out of the check without a word."""
-    return [rulespec.split(r)[0] for r in rules if not rulespec.parse(r)]
+    """IDs of rules whose When/Do/Not fields `duplicates` cannot read."""
+    return [rulespec.split(r)[0] for r in rules if not _parse(r)]
 
 
 def citations(cfg: core.Config, days: int, globs: list[str] | None = None) -> dict[str, int]:
@@ -114,8 +136,8 @@ def render(rep: dict, day: str) -> str:
     lines += [f"- [ ] merge {d['a']} and {d['b']} (When {d['when']}, Do {d['do']})" for d in rep["duplicates"]] or ["- none"]
     skipped = rep.get("not_compared", [])
     if skipped:
-        lines.append(f"Not compared: {len(skipped)} of {rep['rules']} rules are not in the When/Do/Not shape with a "
-                     "(YYYY-MM-DD · agent, project) tag at the end, so this check skipped them "
+        lines.append(f"Not compared: {len(skipped)} of {rep['rules']} rules have no readable When/Do/Not fields "
+                     "in either the current or timestamp-prefixed format, so this check skipped them "
                      f"({', '.join(r or '(no id)' for r in skipped)}).")
     lines += ["", f"## Not cited in {rep['unused_days']} days ({len(rep['unused'])})",
               "Candidates to move to a folded topic or retire; a rule that guards a rare event can stay."]
