@@ -134,6 +134,20 @@ class ClaimTests(CollabBase):
         self.assertEqual(self.run_cli("release", "-a", "cursor")[0], 0)
         self.assertNotIn("cursor", self.run_cli("claims")[1])
 
+    def test_claim_normalizes_paths_and_matches_legacy_claims(self):
+        self.run_cli("claim", "-a", "first", "-p", "webapp", "-f", "./src/../src/a.py",
+                     "-m", "first edit")
+        claims = collab.load_claims(self.cfg)
+        self.assertEqual(claims[0]["files"], ["src/a.py"])
+        # Existing saved claims may still contain the original spelling.
+        claims[0]["files"] = ["./src/a.py"]
+        core.save_json(self.cfg.state / "claims.json", claims)
+        overlaps = collab.find_overlaps(self.cfg, "second", "webapp", ["src/a.py"])
+        self.assertEqual([claim["agent"] for claim in overlaps], ["first"])
+        code, _ = self.run_cli("claim", "-a", "second", "-p", "webapp", "-f", "src/a.py",
+                               "-m", "second edit")
+        self.assertEqual(code, 3)
+
     def test_expired_claims_disappear(self):
         collab.claim(self.cfg, agent="cursor", project="p", summary="s", ttl_min=-1)
         self.assertEqual(collab.load_claims(self.cfg), [])
@@ -284,3 +298,34 @@ def test_sentence_count_ignores_dots_in_names_and_semicolons():
     assert _sentences("Keys are in ~/.config/awesome-factory/x.env and jobs/x_autopilot.py reads them; verified 2026-10-27.") == 1
     assert _sentences("One. Two! Three? Four.") == 4
     assert _sentences("第一句。第二句！第三句") == 3
+
+
+class ClaimPathTests(unittest.TestCase):
+    def test_equivalent_paths_and_directories_overlap(self):
+        for first, second in [
+            ("./src/a.py", "src/a.py"),
+            ("src/../src/a.py", "src/a.py"),
+            ("src/", "./src/a.py"),
+            ("src", "src/"),
+            ("src\\a.py", "src/a.py"),
+            (".", "src/a.py"),
+        ]:
+            with self.subTest(first=first, second=second):
+                a = {"agent": "a", "project": "p", "files": [first]}
+                b = {"agent": "b", "project": "p", "files": [second]}
+                self.assertTrue(collab._overlaps(a, b))
+                self.assertTrue(collab._overlaps(b, a))
+
+    def test_distinct_paths_and_claim_scopes_do_not_overlap(self):
+        a = {"agent": "a", "project": "p", "files": ["src/a.py"]}
+        for files, project, agent in [
+            (["other/src/a.py/child"], "p", "b"),
+            (["src/a.py.bak"], "p", "b"),
+            (["src/A.py"], "p", "b"),
+            (["./src/a.py"], "other", "b"),
+            (["./src/a.py"], "p", "a"),
+        ]:
+            with self.subTest(files=files, project=project, agent=agent):
+                b = {"agent": agent, "project": project, "files": files}
+                self.assertFalse(collab._overlaps(a, b))
+                self.assertFalse(collab._overlaps(b, a))
