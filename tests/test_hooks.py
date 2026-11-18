@@ -66,6 +66,29 @@ class NewsTests(Base):
         text = hooks.news_text(hooks.news(self.cfg, "codex", "s"))
         self.assertIn("(+5 older", text)
 
+    def test_first_call_with_last_returns_recent_other_agent_events(self):
+        core.append_event(self.cfg, agent="trae", kind="note", summary="t1")
+        core.append_event(self.cfg, agent="claude-code", kind="note", summary="mine")
+        core.append_event(self.cfg, agent="trae", kind="note", summary="t2")
+        core.append_event(self.cfg, agent="trae", kind="note", summary="t3")
+        rep = hooks.news(self.cfg, "claude-code", "s-last", last=2)
+        self.assertTrue(rep["first"])
+        self.assertEqual([e["summary"] for e in rep["events"]], ["t2", "t3"])
+        self.assertEqual(hooks.news(self.cfg, "claude-code", "s-last", last=2)["events"], [])
+
+    def test_cli_news_last_flag_and_negative_validation(self):
+        core.append_event(self.cfg, agent="trae", kind="note", summary="prior")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = cli.main(["news", "--agent", "claude-code", "--session", "s-cli", "--last", "1"])
+        self.assertEqual(code, 0)
+        self.assertIn("prior", out.getvalue())
+
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            bad = cli.main(["news", "--agent", "claude-code", "--last", "-1"])
+        self.assertEqual(bad, 2)
+
 
 class NewsSizeTests(Base):
     """2026-11-08: a rules slim re-announced every rule as NEW and injected 48.9 KB into each session."""

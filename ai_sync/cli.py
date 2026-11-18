@@ -424,7 +424,11 @@ def cmd_news(a) -> int:
     if not agent:
         print("error: pass --agent (or set AISYNC_AGENT)", file=sys.stderr)
         return 2
-    rep = hooks.news(core.load_config(), agent, a.session or "")
+    last = getattr(a, "last", 0)
+    if last < 0:
+        print("error: --last must be >= 0", file=sys.stderr)
+        return 2
+    rep = hooks.news(core.load_config(), agent, a.session or "", last=last)
     text = hooks.news_text(rep)
     print(text or ("cursor set; next call shows what changed after now" if rep["first"] else "nothing new"))
     return 0
@@ -856,6 +860,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("news", help="what other tools did since this session last looked (first call sets the cursor)")
     s.add_argument("--agent", "-a")
     s.add_argument("--session", "-s", help="any stable id for this chat/session")
+    s.add_argument("--last", "-n", type=int, default=0, help="on the first call, also show the last N events from other agents")
     s.set_defaults(fn=cmd_news)
 
     s = sub.add_parser("hook", help="entry point for a tool's hook system (reads hook JSON on stdin, never fails)")
