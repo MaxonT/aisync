@@ -108,7 +108,7 @@ Step by step: [how it works](https://maxont.github.io/aisync/how-it-works/) · t
 
 aisync also does the rules part: one rules block copied into every tool's own rule file, synced 3-way, conflicts never overwritten.
 
-**Dogfooded:** 6,700+ journal events from 7 AI tools over 4 weeks.
+**Dogfooded:** 8,600+ journal events from 7 AI tools, 2026-10-10 to 2026-11-19 (counted 2026-11-19 on one author's hub).
 
 ## Why not just AGENTS.md?
 
