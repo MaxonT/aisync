@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import json
 import unittest
 
 from ai_sync import core, mcp_server
@@ -43,6 +44,21 @@ class ToolTests(Base):
         self.assertIn("new thing happened", mcp_server.news("cursor", "m1"))
         self.assertEqual(mcp_server.news("cursor", "m1"), "nothing new")
         self.assertIn("claude-code", mcp_server.status())
+
+    def test_claim_returns_machine_readable_json(self):
+        self._truth()
+        rep = json.loads(mcp_server.claim("codex", "api", "SDK upgrade", "app/payments/"))
+        self.assertTrue(rep["claimed"])
+        self.assertEqual(rep["overlaps"], [])
+        self.assertIn("claimed api", rep["message"])
+        rep = json.loads(mcp_server.claim("claude-code", "api", "refunds", "app/payments/refunds.py"))
+        self.assertTrue(rep["claimed"])
+        self.assertEqual(len(rep["overlaps"]), 1)
+        self.assertEqual(rep["overlaps"][0]["agent"], "codex")
+        self.assertEqual(rep["overlaps"][0]["project"], "api")
+        self.assertEqual(rep["overlaps"][0]["summary"], "SDK upgrade")
+        self.assertIn("app/payments", rep["overlaps"][0]["files"][0])
+        self.assertIn("OVERLAP with codex", rep["message"])
 
     def test_rule_add_via_fields_and_refusal(self):
         self._truth()

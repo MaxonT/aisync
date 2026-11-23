@@ -9,6 +9,8 @@ How:  the tool functions below are plain Python over collab/core (tested without
 """
 from __future__ import annotations
 
+import json
+
 from . import collab, core
 
 INSTRUCTIONS = (
@@ -62,7 +64,10 @@ def log(agent: str, project: str, summary: str, kind: str = "dev_log", files: st
 
 
 def claim(agent: str, project: str, summary: str, files: str = "") -> str:
-    """Claim files (comma-separated; empty = whole repo) before editing. Overlaps with other agents come back."""
+    """Claim files (comma-separated; empty = whole repo) before editing. Returns JSON
+    {"claimed": true, "message": "<human sentence>", "overlaps": [{"agent", "project", "summary", "files"}]}
+    so a client can branch on overlaps without parsing prose; the human sentence is unchanged inside
+    "message", so a plain-text search for OVERLAP still finds it."""
     try:
         rep = collab.claim(_cfg(), agent=agent, project=project, summary=summary,
                            files=[f.strip() for f in files.split(",") if f.strip()])
@@ -72,7 +77,9 @@ def claim(agent: str, project: str, summary: str, files: str = "") -> str:
     msg = f"claimed {project} {c['files'] or '[whole repo]'} until {c['expires'][11:16]}"
     if rep["overlaps"]:
         msg += "; OVERLAP with " + ", ".join(f"{o['agent']} ({o['summary']})" for o in rep["overlaps"]) + ": coordinate or pick other work"
-    return msg
+    return json.dumps({"claimed": True, "message": msg,
+                       "overlaps": [{"agent": o["agent"], "project": o["project"], "summary": o["summary"],
+                                     "files": list(o.get("files") or [])} for o in rep["overlaps"]]})
 
 
 def release(agent: str, project: str = "") -> str:
