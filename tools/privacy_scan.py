@@ -34,6 +34,10 @@ PUBLIC_AUTHOR_DIGESTS = {"5dd52596b1ac068f8dcf"}
 # commit messages already public on main, exempt by commit (decided 2026-11-16 by the owner: the npm scope
 # is the public package name). Only the message is exempt; the author names and addresses are still scanned.
 PUBLIC_COMMIT_MESSAGES = {"72abf433": "npm scope in the message of 72abf433; already public, owner decision 2026-11-16"}
+# merged contributor PRs whose author address is already public on main (the owner's decision, 2026-11-23,
+# same pattern as above). Exempt by exact commit and only the author line; committers and messages stay scanned.
+PUBLIC_AUTHOR_COMMITS = {"8b8c07b0": "contributor author address already public on main; owner decision 2026-11-23",
+                         "026e84d5": "contributor author address already public on main; owner decision 2026-11-23"}
 SKIP_SUFFIX = {".pyc", ".gif", ".png", ".jpg", ".ico", ".mp4", ".whl", ".gz"}
 
 
@@ -129,6 +133,8 @@ def history_items(root: Path, everything: bool = False):
         # name (same address, different name). That name comes from the host, not from what we push.
         if not (ce == ae and cn != an):
             people.append(f"<{ce}>" if public(cn) else f"{cn} <{ce}>")
+        if any(sha.startswith(k) for k in PUBLIC_AUTHOR_COMMITS):
+            people = people[1:]
         if any(sha.startswith(k) for k in PUBLIC_COMMIT_MESSAGES):
             # only the lines that name the public npm scope are exempt; the rest of the message is scanned
             body = "\n".join(l for l in body.splitlines() if "mingyang2026" not in l.lower())
