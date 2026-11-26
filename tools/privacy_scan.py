@@ -34,10 +34,6 @@ PUBLIC_AUTHOR_DIGESTS = {"5dd52596b1ac068f8dcf"}
 # commit messages already public on main, exempt by commit (decided 2026-11-16 by the owner: the npm scope
 # is the public package name). Only the message is exempt; the author names and addresses are still scanned.
 PUBLIC_COMMIT_MESSAGES = {"72abf433": "npm scope in the message of 72abf433; already public, owner decision 2026-11-16"}
-# merged contributor PRs whose author address is already public on main (the owner's decision, 2026-11-23,
-# same pattern as above). Exempt by exact commit and only the author line; committers and messages stay scanned.
-PUBLIC_AUTHOR_COMMITS = {"8b8c07b0": "contributor author address already public on main; owner decision 2026-11-23",
-                         "026e84d5": "contributor author address already public on main; owner decision 2026-11-23"}
 SKIP_SUFFIX = {".pyc", ".gif", ".png", ".jpg", ".ico", ".mp4", ".whl", ".gz"}
 
 
@@ -114,6 +110,15 @@ def build(root: Path, out: Path) -> list[Path]:
     return sorted(out.glob("*.whl")) + sorted(out.glob("*.tar.gz"))
 
 
+def published_commits(root: Path) -> set[str]:
+    """Commits already reachable from main: public, so only a history rewrite could change them. Empty when there is no main ref."""
+    for ref in ("origin/main", "main"):
+        r = subprocess.run(["git", "-C", str(root), "rev-list", ref], capture_output=True, text=True)
+        if r.returncode == 0:
+            return set(r.stdout.split())
+    return set()
+
+
 def history_items(root: Path, everything: bool = False):
     """Commit messages and authors since the newest tag (all of them with everything=True): what a
     push would publish now. Older commits are already public and can only change by a history rewrite."""
@@ -123,6 +128,7 @@ def history_items(root: Path, everything: bool = False):
     log = subprocess.run(["git", "-C", str(root), "log", *rng, "--no-merges",
                           "--format=%x00%H%x01%an%x01%ae%x01%cn%x01%ce%n%B"],
                          capture_output=True, text=True, check=True).stdout
+    published = published_commits(root)
     for entry in filter(str.strip, log.split("\0")):
         head, _, body = entry.partition("\n")
         sha, an, ae, cn, ce = head.split("\x01")
@@ -133,7 +139,9 @@ def history_items(root: Path, everything: bool = False):
         # name (same address, different name). That name comes from the host, not from what we push.
         if not (ce == ae and cn != an):
             people.append(f"<{ce}>" if public(cn) else f"{cn} <{ce}>")
-        if any(sha.startswith(k) for k in PUBLIC_AUTHOR_COMMITS):
+        if sha in published:
+            # owner decision 2026-11-26: a contributor's author address on a commit already on main is public and cannot change
+            # without a history rewrite: exempt it for every such commit. Committers and messages stay scanned.
             people = people[1:]
         if any(sha.startswith(k) for k in PUBLIC_COMMIT_MESSAGES):
             # only the lines that name the public npm scope are exempt; the rest of the message is scanned

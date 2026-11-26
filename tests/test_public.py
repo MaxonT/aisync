@@ -280,6 +280,24 @@ class PrivacyTests(unittest.TestCase):
                 GIT_COMMITTER_NAME=name, GIT_COMMITTER_EMAIL="a@example.com")
             self.assertTrue(self.ps.scan_files(self.ps.history_items(Path(d))))
 
+    def test_history_exempts_a_contributor_author_already_on_main_only(self):
+        import subprocess, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            env = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+            git = lambda *a, **e: subprocess.run(["git", "-C", d, *a], check=True, capture_output=True, env={**env, **e})
+            git("init", "-q", "-b", "main")
+            git("commit", "-q", "--allow-empty", "-m", "base", GIT_AUTHOR_NAME="a", GIT_AUTHOR_EMAIL="a@example.com",
+                GIT_COMMITTER_NAME="a", GIT_COMMITTER_EMAIL="a@example.com")
+            git("tag", "v0")
+            who = dict(GIT_AUTHOR_NAME="Contrib", GIT_AUTHOR_EMAIL="contrib@" + "uni.edu",
+                       GIT_COMMITTER_NAME="a", GIT_COMMITTER_EMAIL="a@example.com")
+            git("checkout", "-q", "-b", "pr")
+            git("commit", "-q", "--allow-empty", "-m", "contributor change", **who)
+            self.assertTrue(self.ps.scan_files(self.ps.history_items(Path(d))))     # not on main yet: scanned
+            git("checkout", "-q", "main")
+            git("merge", "-q", "--ff-only", "pr")
+            self.assertEqual(self.ps.scan_files(self.ps.history_items(Path(d))), [])  # merged to main: author is public
+
     def test_no_private_strings_in_tree(self):
         self.assertEqual(self.ps.scan_files(self.ps.tree_items(ROOT)), [])
 
